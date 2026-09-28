@@ -105,6 +105,11 @@
 
 <div class="card"><h2>License</h2><div class="body">
   <p class="note">A trial key for laraburford-prog.github.io is built into this page and runs until October 5. Paste a different key here only if you need to override it.</p>
+  <div class="field">
+    <label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--ink);display:flex;gap:8px;align-items:center">
+      <input type="checkbox" id="nolic" style="width:auto"> Run without a license, 60 seconds per session
+    </label>
+  </div>
   <div class="field"><label for="lic">Trial license key</label>
     <textarea id="lic" rows="2" spellcheck="false" placeholder="a key is already built in; paste here only to override it"></textarea></div>
   <button class="ghost" id="saveLic">Save key</button>
@@ -124,6 +129,11 @@ const store = {
 const DEFAULT_STIDS = "708, Business reply mail, no extra services, yes";
 $("lic").value = store.get("imb_lic", "");
 $("stids").value = store.get("imb_stids", DEFAULT_STIDS);
+$("nolic").checked = store.get("imb_nolic", "") === "1";
+$("nolic").addEventListener("change", () => {
+  store.set("imb_nolic", $("nolic").checked ? "1" : "0");
+  location.reload();
+});
 $("saveLic").addEventListener("click", () => {
   store.set("imb_lic", $("lic").value.trim());
   alert("Saved. Reload the page to apply.");
@@ -143,10 +153,11 @@ function stidTable(){
 }
 
 /* ---------- license ----------
-   Trial key, bound to laraburford-prog.github.io, expires 2026-10-05.
+   Web trial key for localhost and laraburford-prog.github.io, expires 2026-10-05.
    Anything pasted into the License box on the page overrides this.     */
-const BUILT_IN_LICENSE = "RNt14v0fDoEFhgTu5hdjns9dYMW0EsFf+7+driiBY94pIv+X9cZ1235vx3UZ475ID2YArlJhoL8XTsH7aYz+mXG8jrnEwnHmfGL80boa3Uom7D2vVTIA/sjFyXcOJyGw6JYM69HwIT/2LYmq24RHpXlR3V/I5pPH8ZrdeQTfarSfQg6JutA+ridDEI/J57amJSUfgzKWPJPsPh0vI9iGBG7unBM26VjLD8N8XlUXLiCEguSaN4FdP+8L+So/7xJutj/X/b7DDQp0OQesEjwnhI3h3y1Wp6BMT1FbVJGMuphhFPr9bUJbUuY/1V+qQ/0vG+CDKVBwirqLmueo8uEliQ==\nU2NhbmJvdFNESwpsYXJhYnVyZm9yZC1wcm9nLmdpdGh1Yi5pbwoxNzkxMjQ0Nzk5CjgzODg2MDcKMTk=\n";
-const licenseKey = () => store.get("imb_lic", "") || BUILT_IN_LICENSE;
+const BUILT_IN_LICENSE = "Oy8e5vzdxHtaUkuQD+OQApvWJXxj5LhVanBGygJuvKLp5bYhr4OpphEDlAYX46HT1uqvzVma3tRXqySUR51ifa+I5DmV5JDUV02b0aW+pXz9NRxPtvsJNQohZqnEq3slILBYT5vCl4fswW1pXEGXULOiXqJV28lYorBaBJxVYpmz6ybCMeVQmV6PbBH1m4sgBe8Ja08w/KzMdYIz+hgqgzY2coLSntALBXScf2SdRq0+nPY3lNkN8lY2E5LhbqBj90DhVlsyNOrfYglRpIWnf8qK6stGp/Ny85RREBxcCSqmaMdbUPRjY14r9Hrl4/DvPl51yCRJUdpzXEMREOTh/Q==\nU2NhbmJvdFNESwpsb2NhbGhvc3R8bGFyYWJ1cmZvcmQtcHJvZy5naXRodWIuaW8KMTc5MTI0NDc5OQo4Mzg4NjA3Cjg=\n";
+const licenseKey = () =>
+  store.get("imb_nolic", "") === "1" ? "" : (store.get("imb_lic", "") || BUILT_IN_LICENSE);
 
 /* ---------- IMb field parsing ----------
    31 digits: barcode ID (2) + service type (3) + mailer ID (6 or 9)
@@ -295,7 +306,7 @@ let sdk = null;
     });
     $("sdkNote").textContent = licenseKey()
       ? "Scanner ready. Licensed through October 5."
-      : "Scanner ready. Without a license key each session lasts 60 seconds.";
+      : "Scanner ready, unlicensed. Each session lasts 60 seconds.";
   } catch (e) {
     $("sdkNote").innerHTML = '<span style="color:var(--fail)">Scanner failed to load: ' + esc(e.message || e) + '</span>';
     $("scanBtn").disabled = true;
