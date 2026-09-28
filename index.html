@@ -103,6 +103,36 @@
   <button class="ghost" id="saveStids">Save codes</button>
 </div></div>
 
+<div class="card"><h2>Scanner settings</h2><div class="body">
+  <p class="note">Tune these on the phone. An IMb is long and short, so a wide window and some zoom help a lot.</p>
+  <div class="field">
+    <label for="shape">Window shape</label>
+    <select id="shape" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+      <option value="6">Very wide, 6 to 1</option>
+      <option value="4">Wide, 4 to 1</option>
+      <option value="3">Medium, 3 to 1</option>
+      <option value="1">Square, 1 to 1</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="zoom">Starting zoom</label>
+    <select id="zoom" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+      <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option>
+    </select>
+  </div>
+  <div class="field">
+    <label for="fmts">Barcode formats</label>
+    <select id="fmts" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+      <option value="imb">Intelligent Mail only</option>
+      <option value="all">Every format the SDK knows</option>
+    </select>
+  </div>
+  <label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--ink);display:flex;gap:8px;align-items:center">
+    <input type="checkbox" id="diag" style="width:auto"> Show the raw scan result
+  </label>
+  <p class="note" id="cfgNote" style="margin:10px 0 0"></p>
+</div></div>
+
 <div class="card"><h2>License</h2><div class="body">
   <p class="note">A trial key for laraburford-prog.github.io is built into this page and runs until October 5. Paste a different key here only if you need to override it.</p>
   <div class="field">
@@ -295,6 +325,28 @@ $("exportBtn").addEventListener("click", () => {
   a.click(); URL.revokeObjectURL(a.href);
 });
 
+
+/* ---------- scanner settings ---------- */
+const SET = {
+  shape: () => store.get("imb_shape", "6"),
+  zoom:  () => store.get("imb_zoom", "2"),
+  fmts:  () => store.get("imb_fmts", "imb"),
+  diag:  () => store.get("imb_diag", "") === "1"
+};
+$("shape").value = SET.shape();
+$("zoom").value  = SET.zoom();
+$("fmts").value  = SET.fmts();
+$("diag").checked = SET.diag();
+$("shape").addEventListener("change", e => { store.set("imb_shape", e.target.value); showCfg(); });
+$("zoom").addEventListener("change",  e => { store.set("imb_zoom",  e.target.value); showCfg(); });
+$("fmts").addEventListener("change",  e => { store.set("imb_fmts",  e.target.value); showCfg(); });
+$("diag").addEventListener("change",  e => store.set("imb_diag", e.target.checked ? "1" : "0"));
+function showCfg(){
+  $("cfgNote").textContent = "Window " + SET.shape() + " to 1, starting zoom " + SET.zoom() +
+    "x, " + (SET.fmts() === "imb" ? "Intelligent Mail only" : "all formats") + ". Takes effect on the next scan.";
+}
+showCfg();
+
 /* ---------- scanner ---------- */
 let sdk = null;
 
@@ -317,10 +369,23 @@ $("scanBtn").addEventListener("click", async () => {
   if (!sdk) return;
   try {
     const config = new ScanbotSDK.UI.Config.BarcodeScannerScreenConfiguration();
-    // Narrow to the Intelligent Mail barcode where this SDK build allows it.
-    try {
-      config.scannerConfiguration.barcodeFormats = ["USPS_INTELLIGENT_MAIL"];
-    } catch (e) { /* fall back to all symbologies */ }
+
+    // An IMb is long and short. The viewfinder defaults to square, which is
+    // why it is hard to fill the frame with one.
+    config.viewFinder.visible = true;
+    config.viewFinder.aspectRatio = { width: parseFloat(SET.shape()), height: 1 };
+
+    // Give the user real zoom steps and start part way in.
+    config.cameraConfiguration.zoomSteps = [1, 2, 3, 5];
+    config.cameraConfiguration.defaultZoomFactor = parseFloat(SET.zoom());
+
+    // Accept only the Intelligent Mail barcode. The correct path is
+    // barcodeFormatConfigurations, and objects are identified by _type.
+    if (SET.fmts() === "imb") {
+      config.scannerConfiguration.barcodeFormatConfigurations = [
+        { _type: "BarcodeFormatUSPSIntelligentMailConfiguration" }
+      ];
+    }
 
     const result = await ScanbotSDK.UI.createBarcodeScanner(config);
     if (!result || !result.items || !result.items.length) return;
@@ -328,6 +393,13 @@ $("scanBtn").addEventListener("click", async () => {
     const item = result.items[0];
     const raw = (item.barcode && item.barcode.text) || item.text || item.textWithExtension || String(item);
     render(parseIMb(raw), raw);
+    if (SET.diag()) {
+      const d = document.createElement("div");
+      d.className = "card";
+      d.innerHTML = '<h2>Raw result</h2><div class="body"><div class="raw">' +
+        esc(JSON.stringify(result, null, 1).slice(0, 3000)) + '</div></div>';
+      $("result").appendChild(d);
+    }
   } catch (e) {
     alert("Scan failed: " + (e.message || e));
   }
