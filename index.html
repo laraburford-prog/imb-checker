@@ -44,6 +44,7 @@
   .verdict{padding:14px;border-radius:3px;margin-bottom:12px;font-weight:650}
   .verdict.ok{background:var(--pass-bg);color:var(--pass)}
   .verdict.no{background:var(--fail-bg);color:var(--fail)}
+  .verdict.unk{background:var(--amber-bg);color:#54410A}
   .verdict small{display:block;font-weight:400;font-size:13px;margin-top:3px;opacity:.85}
 
   table{width:100%;border-collapse:collapse;font-size:14px}
@@ -218,6 +219,11 @@ function parseIMb(raw){
   if (![0, 5, 9, 11].includes(out.routing.length))
     out.errors.push("Routing code is " + out.routing.length + " digits. It must be 0, 5, 9 or 11.");
 
+  // A routing code made of zeros routes nowhere. A piece that needs no
+  // routing carries the 20-digit form instead, not a field full of zeros.
+  if (out.routing.length >= 5 && /^0+$/.test(out.routing.slice(0, 9)))
+    out.errors.push("Routing code is all zeros, so this will not sort to the reply address. A piece with no routing should use the 20-digit barcode instead.");
+
   out.zip   = out.routing.slice(0, 5);
   out.plus4 = out.routing.slice(5, 9);
   out.dp    = out.routing.slice(9, 11);
@@ -258,7 +264,10 @@ function render(p, raw){
 
   const verdict = problems.length
     ? '<div class="verdict no">Do not approve<small>' + problems.map(esc).join("<br>") + '</small></div>'
-    : '<div class="verdict ok">Checks passed<small>' + esc(zipCheck.text) + '</small></div>';
+    : zipCheck.state === "unknown"
+      ? '<div class="verdict unk">Not verified<small>' + esc(zipCheck.text) +
+        ' The barcode itself is well formed, but nothing was compared against it.</small></div>'
+      : '<div class="verdict ok">Checks passed<small>' + esc(zipCheck.text) + '</small></div>';
 
   const stBadge = !st
     ? '<span class="badge unk">NOT IN YOUR TABLE</span>'
@@ -293,7 +302,9 @@ function render(p, raw){
     '</div></div>';
 
   session.unshift({ time: new Date().toLocaleTimeString(), raw: raw, zip: $("zip").value,
-                    routing: p.routing, stid: p.serviceType, pass: problems.length === 0 });
+                    routing: p.routing, stid: p.serviceType,
+                    pass: problems.length === 0,
+                    checked: zipCheck.state !== "unknown" });
   renderLog();
 }
 
@@ -306,7 +317,7 @@ function renderLog(){
   $("log").innerHTML = head +
     '<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>' +
     session.map(s =>
-      '<tr class="' + (s.pass ? "good" : "bad") + '"><td class="v">' + esc(s.time) + '</td>' +
+      '<tr class="' + (!s.pass ? "bad" : s.checked ? "good" : "") + '"><td class="v">' + esc(s.time) + '</td>' +
       '<td class="v">' + esc(s.routing || "none") + '</td><td class="v">' + esc(s.stid || "") + '</td>' +
       '<td><span class="badge ' + (s.pass ? "ok" : "no") + '">' + (s.pass ? "PASS" : "FAIL") + '</span></td></tr>'
     ).join("") + '</tbody></table>';
@@ -393,6 +404,33 @@ $("scanBtn").addEventListener("click", async () => {
     const item = result.items[0];
     const raw = (item.barcode && item.barcode.text) || item.text || item.textWithExtension || String(item);
     render(parseIMb(raw), raw);
+
+    // Always show what the SDK actually returned. Until the routing code is
+    // trusted, the raw value matters more than my interpretation of it.
+    const probe = {
+      itemsReturned: result.items.length,
+      format: item.format,
+      text: item.text,
+      textLength: (item.text || "").length,
+      digitsOnly: String(item.text || "").replace(/\D/g, ""),
+      digitCount: String(item.text || "").replace(/\D/g, "").length,
+      otherKeys: Object.keys(item).filter(k => !["text", "format"].includes(k)),
+      rawBytesLength: item.rawBytes ? item.rawBytes.length : null
+    };
+    const box = document.createElement("div");
+    box.className = "card";
+    box.innerHTML = '<h2>What the SDK returned</h2><div class="body">' +
+      '<div class="raw" id="probeBox">' + esc(JSON.stringify(probe, null, 1)) + '</div>' +
+      '<div class="row" style="margin-top:10px"><button class="ghost" id="copyProbe">Copy this</button></div></div>';
+    $("result").appendChild(box);
+    const cp = document.getElementById("copyProbe");
+    if (cp) cp.addEventListener("click", () => {
+      navigator.clipboard.writeText(JSON.stringify(probe, null, 1)).then(
+        () => { cp.textContent = "Copied"; },
+        () => { cp.textContent = "Select the text above and copy it"; }
+      );
+    });
+
     if (SET.diag()) {
       const d = document.createElement("div");
       d.className = "card";
