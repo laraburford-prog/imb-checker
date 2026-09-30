@@ -81,7 +81,19 @@
     <label for="zip">ZIP+4 printed on the piece</label>
     <input type="text" id="zip" inputmode="numeric" placeholder="10249-6118" autocomplete="off">
   </div>
+  <div class="field">
+    <label for="piece">What are you scanning</label>
+    <select id="piece" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+      <option value="reply">Reply envelope, BRE or CRE</option>
+      <option value="outbound">Outer envelope</option>
+    </select>
+  </div>
   <button id="scanBtn">Scan the barcode</button>
+  <div class="field" style="margin-top:12px">
+    <label for="manual">Or type the digits from another reader</label>
+    <input type="text" id="manual" inputmode="numeric" placeholder="31 digits" autocomplete="off">
+  </div>
+  <button class="ghost" id="manualBtn" style="width:100%">Check these digits</button>
   <p class="note" id="sdkNote" style="margin-top:10px">Loading scanner…</p>
 </div></div>
 
@@ -96,12 +108,16 @@
 </div></div>
 
 <div class="card"><h2>Service type codes</h2><div class="body">
-  <p class="note">The 3-digit service type says what class and services the barcode claims. Add the ones you use from the USPS Service Type ID table. Anything not listed is reported as unknown rather than guessed at.</p>
-  <div class="field">
-    <label for="stids">One per line: code, description, reply</label>
-    <textarea id="stids" rows="5" spellcheck="false"></textarea>
-  </div>
-  <button class="ghost" id="saveStids">Save codes</button>
+  <p class="note">Built in from the USPS Service Type Identifier table. A code that isn't here is reported as unknown rather than guessed at.</p>
+  <div id="stidList"></div>
+  <details style="margin-top:12px">
+    <summary style="font-size:13px;color:var(--muted);cursor:pointer">Add a code the table is missing</summary>
+    <div class="field" style="margin-top:10px">
+      <label for="stids">One per line: code, description, reply or outbound</label>
+      <textarea id="stids" rows="3" spellcheck="false" placeholder="736, Some code, outbound"></textarea>
+    </div>
+    <button class="ghost" id="saveStids">Save additions</button>
+  </details>
 </div></div>
 
 <div class="card"><h2>Scanner settings</h2><div class="body">
@@ -157,9 +173,34 @@ const store = {
   get(k, d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
 };
-const DEFAULT_STIDS = "708, Business reply mail, no extra services, yes";
+/* Service Type Identifiers from the USPS STID table. Codes carry the mail
+   class and which electronic services the barcode requests. "reply" marks
+   the ones that belong on a reply envelope. This is a working subset, not
+   the whole published table, so an unlisted code is reported as unknown. */
+const STID_BUILTIN = {
+  "040": ["First-Class Mail, basic, destination IMb tracing", "outbound"],
+  "042": ["Standard Mail, basic, destination IMb tracing", "outbound"],
+  "044": ["Periodicals, manual address correction", "outbound"],
+  "231": ["USPS Marketing Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "241": ["First-Class Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "261": ["Standard Mail, no services", "outbound"],
+  "270": ["First-Class Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "271": ["USPS Marketing Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "300": ["First-Class Mail, no services", "outbound"],
+  "401": ["Bound Printed Matter, no services", "outbound"],
+  "703": ["Courtesy reply mail", "reply"],
+  "708": ["Business reply mail, no services", "reply"],
+  "710": ["Priority Mail, no services", "outbound"],
+  "712": ["Priority Mail Flat Rate, no services", "outbound"],
+  "747": ["First-Class Political Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "748": ["USPS Political Marketing Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "768": ["First-Class Political Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "781": ["USPS Political Marketing Mail, Full-Service with IV tracking, ACS Change Service Option 1", "outbound"]
+};
 $("lic").value = store.get("imb_lic", "");
-$("stids").value = store.get("imb_stids", DEFAULT_STIDS);
+$("stids").value = store.get("imb_stids", "");
+$("piece").value = store.get("imb_piece", "reply");
+$("piece").addEventListener("change", e => store.set("imb_piece", e.target.value));
 $("nolic").checked = store.get("imb_nolic", "") === "1";
 $("nolic").addEventListener("change", () => {
   store.set("imb_nolic", $("nolic").checked ? "1" : "0");
@@ -171,16 +212,32 @@ $("saveLic").addEventListener("click", () => {
 });
 $("saveStids").addEventListener("click", () => {
   store.set("imb_stids", $("stids").value);
+  renderStidList();
   alert("Saved.");
 });
 
 function stidTable(){
   const t = {};
+  Object.keys(STID_BUILTIN).forEach(code => {
+    t[code] = { desc: STID_BUILTIN[code][0], reply: STID_BUILTIN[code][1] === "reply", added: false };
+  });
+  // User additions sit on top, so a code can also be corrected locally.
   $("stids").value.split("\n").forEach(line => {
     const p = line.split(",").map(x => x.trim());
-    if (p[0] && /^\d{3}$/.test(p[0])) t[p[0]] = { desc: p[1] || "", reply: /^y/i.test(p[p.length-1] || "") };
+    if (p[0] && /^\d{3}$/.test(p[0]))
+      t[p[0]] = { desc: p[1] || "", reply: /^(y|reply)/i.test(p[p.length - 1] || ""), added: true };
   });
   return t;
+}
+
+function renderStidList(){
+  const t = stidTable();
+  const rows = Object.keys(t).sort().map(code =>
+    '<tr><td class="v" style="width:70px">' + esc(code) + '</td>' +
+    '<td>' + esc(t[code].desc) +
+    (t[code].reply ? ' <span class="badge ok">REPLY</span>' : '') +
+    (t[code].added ? ' <span class="badge unk">YOURS</span>' : '') + '</td></tr>').join("");
+  $("stidList").innerHTML = '<table><tbody>' + rows + '</tbody></table>';
 }
 
 /* ---------- license ----------
@@ -258,9 +315,13 @@ function render(p, raw){
 
   const problems = p.errors.slice();
   if (zipCheck.state === "bad") problems.push(zipCheck.text);
-  if (st && !st.reply)
+  const piece = $("piece").value;
+  if (st && piece === "reply" && !st.reply)
     problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
-                  '", which is not a reply-mail type. On a BRE that is usually wrong.');
+                  '", which is not a reply-mail code. On a reply envelope that is usually wrong.');
+  if (st && piece === "outbound" && st.reply)
+    problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
+                  '", which belongs on a reply envelope, not an outer envelope.');
 
   const verdict = problems.length
     ? '<div class="verdict no">Do not approve<small>' + problems.map(esc).join("<br>") + '</small></div>'
@@ -322,6 +383,12 @@ function renderLog(){
       '<td><span class="badge ' + (s.pass ? "ok" : "no") + '">' + (s.pass ? "PASS" : "FAIL") + '</span></td></tr>'
     ).join("") + '</tbody></table>';
 }
+
+$("manualBtn").addEventListener("click", () => {
+  const d = $("manual").value.replace(/\D/g, "");
+  if (!d) { $("manual").focus(); return; }
+  render(parseIMb(d), d);
+});
 
 $("clearBtn").addEventListener("click", () => { session = []; renderLog(); $("result").innerHTML = ""; });
 $("exportBtn").addEventListener("click", () => {
@@ -407,15 +474,20 @@ $("scanBtn").addEventListener("click", async () => {
 
     // Always show what the SDK actually returned. Until the routing code is
     // trusted, the raw value matters more than my interpretation of it.
+    const bc = item.barcode || item;
     const probe = {
       itemsReturned: result.items.length,
-      format: item.format,
-      text: item.text,
-      textLength: (item.text || "").length,
-      digitsOnly: String(item.text || "").replace(/\D/g, ""),
-      digitCount: String(item.text || "").replace(/\D/g, "").length,
-      otherKeys: Object.keys(item).filter(k => !["text", "format"].includes(k)),
-      rawBytesLength: item.rawBytes ? item.rawBytes.length : null
+      wrapperKeys: Object.keys(item),
+      barcodeKeys: Object.keys(bc),
+      format: bc.format,
+      textVerbatim: JSON.stringify(bc.text),
+      textLength: (bc.text || "").length,
+      digitsOnly: String(bc.text || "").replace(/\D/g, ""),
+      digitCount: String(bc.text || "").replace(/\D/g, "").length,
+      rawBytesLength: bc.rawBytes ? bc.rawBytes.length : null,
+      rawBytesAsText: bc.rawBytes ? Array.from(bc.rawBytes).map(function(b){
+        return (b >= 32 && b < 127) ? String.fromCharCode(b) : "."; }).join("") : null,
+      extractedDocument: bc.extractedDocument ? JSON.stringify(bc.extractedDocument).slice(0, 400) : null
     };
     const box = document.createElement("div");
     box.className = "card";
@@ -444,6 +516,7 @@ $("scanBtn").addEventListener("click", async () => {
 });
 
 renderLog();
+renderStidList();
 </script>
 </body>
 </html>
