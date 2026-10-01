@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IMb Checker — Dynamsoft</title>
+<script src="https://cdn.jsdelivr.net/npm/dynamsoft-barcode-reader-bundle@11.6.3200/dist/dbr.bundle.js"></script>
+<style>
+  :root{
+    --paper:#EDF1F4; --surface:#FFFFFF; --ink:#13202B; --muted:#5C6C7B;
+    --rule:#D2DAE1; --blue:#2B5C7E; --pass:#1B6E52; --pass-bg:#E4F0EB;
+    --fail:#A82219; --fail-bg:#F8E7E5; --amber:#8A6A0F; --amber-bg:#FBF2DA;
+    --mono: ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box} html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;
+       -webkit-font-smoothing:antialiased;padding-bottom:60px}
+  .wrap{max-width:640px;margin:0 auto;padding:16px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:16px}
+  h1{font-size:18px;font-weight:650;margin:0}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;margin-bottom:14px}
+  .card > h2{font-size:10.5px;font-weight:680;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
+             margin:0;padding:10px 13px;border-bottom:1px solid var(--rule)}
+  .card .body{padding:13px}
+  label{display:block;font-size:11px;font-weight:620;letter-spacing:.04em;text-transform:uppercase;
+        color:var(--muted);margin:0 0 5px}
+  input,textarea{width:100%;font-family:var(--mono);font-size:16px;color:var(--ink);background:var(--surface);
+                 border:1px solid var(--rule);border-radius:2px;padding:9px}
+  .field{margin-bottom:12px} .field:last-child{margin-bottom:0}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
+
+  button{font-family:var(--sans);font-size:15px;font-weight:600;background:var(--ink);color:#fff;
+         border:1px solid var(--ink);border-radius:2px;padding:12px 18px;cursor:pointer;width:100%}
+  button.ghost{background:transparent;color:var(--ink);border-color:var(--rule);font-size:13px;padding:8px 13px;width:auto}
+  button:disabled{opacity:.45}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+
+  .note{font-size:12.5px;color:var(--muted);margin:0 0 10px}
+  .warn{background:var(--amber-bg);border-left:3px solid var(--amber);color:#54410A;padding:9px 12px;
+        font-size:13px;margin:0 0 12px;border-radius:0 2px 2px 0}
+  .verdict{padding:14px;border-radius:3px;margin-bottom:12px;font-weight:650}
+  .verdict.ok{background:var(--pass-bg);color:var(--pass)}
+  .verdict.no{background:var(--fail-bg);color:var(--fail)}
+  .verdict.unk{background:var(--amber-bg);color:#54410A}
+  .verdict small{display:block;font-weight:400;font-size:13px;margin-top:3px;opacity:.85}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{font-size:9.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+     text-align:left;padding:0 8px 5px;border-bottom:1px solid var(--rule)}
+  td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .k{font-weight:620;white-space:nowrap;width:42%}
+  .v{font-family:var(--mono);font-size:13.5px;overflow-wrap:anywhere}
+  tr.bad td{background:var(--fail-bg)}
+  tr.good td{background:var(--pass-bg)}
+  .badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:2px}
+  .badge.ok{background:var(--pass-bg);color:var(--pass)}
+  .badge.no{background:var(--fail-bg);color:var(--fail)}
+  .badge.unk{background:var(--amber-bg);color:var(--amber)}
+  .raw{font-family:var(--mono);font-size:13px;word-break:break-all;background:var(--paper);padding:9px;border-radius:2px}
+  .seg{display:inline-block;padding:1px 3px;border-radius:2px;margin-right:1px}
+  .s0{background:#DCE7EF} .s1{background:#E7DCEF} .s2{background:#DCEFE2} .s3{background:#EFE7DC} .s4{background:#EFDCDC}
+  .legend{font-size:11px;color:var(--muted);margin-top:6px}
+  .legend span{margin-right:10px}
+  .legend b{display:inline-block;width:14px;height:10px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>IMb Checker <span style="font-weight:400;color:var(--muted);font-size:13px">Dynamsoft</span></h1>
+  <p>Scan the barcode on a business reply envelope and check it against the address printed on the piece.</p>
+</header>
+
+<div class="card"><h2>Scan</h2><div class="body">
+  <div class="field">
+    <label for="zip">ZIP+4 printed on the piece</label>
+    <input type="text" id="zip" inputmode="numeric" placeholder="10249-6118" autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="piece">What are you scanning</label>
+    <select id="piece" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+      <option value="reply">Reply envelope, BRE or CRE</option>
+      <option value="outbound">Outer envelope</option>
+    </select>
+  </div>
+  <button id="scanBtn">Scan the barcode</button>
+  <div class="field" style="margin-top:12px">
+    <label for="manual">Or type the digits from another reader</label>
+    <input type="text" id="manual" inputmode="numeric" placeholder="31 digits" autocomplete="off">
+  </div>
+  <button class="ghost" id="manualBtn" style="width:100%">Check these digits</button>
+  <p class="note" id="sdkNote" style="margin-top:10px">Loading scanner…</p>
+</div></div>
+
+<div id="result"></div>
+
+<div class="card"><h2>Session</h2><div class="body">
+  <div id="log"><p class="note">Nothing scanned yet.</p></div>
+  <div class="row" style="margin-top:10px">
+    <button class="ghost" id="exportBtn">Export CSV</button>
+    <button class="ghost" id="clearBtn">Clear session</button>
+  </div>
+</div></div>
+
+<div class="card"><h2>Service type codes</h2><div class="body">
+  <p class="note">Built in from the USPS Service Type Identifier table. A code that isn't here is reported as unknown rather than guessed at.</p>
+  <div id="stidList"></div>
+  <details style="margin-top:12px">
+    <summary style="font-size:13px;color:var(--muted);cursor:pointer">Add a code the table is missing</summary>
+    <div class="field" style="margin-top:10px">
+      <label for="stids">One per line: code, description, reply or outbound</label>
+      <textarea id="stids" rows="3" spellcheck="false" placeholder="736, Some code, outbound"></textarea>
+    </div>
+    <button class="ghost" id="saveStids">Save additions</button>
+  </details>
+</div></div>
+
+<div class="card"><h2>License</h2><div class="body">
+  <p class="note">A Dynamsoft web trial key is built into this page. Paste a different one here only to override it. Their trial runs 30 days and renews twice from the customer portal.</p>
+  <div class="field"><label for="lic">Dynamsoft trial license key</label>
+    <textarea id="lic" rows="2" spellcheck="false" placeholder="paste your Dynamsoft trial key, then reload"></textarea></div>
+  <button class="ghost" id="saveLic">Save key</button>
+</div></div>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+/* ---------- storage (best effort) ---------- */
+const store = {
+  get(k, d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+};
+/* Service Type Identifiers from the USPS STID table. Codes carry the mail
+   class and which electronic services the barcode requests. "reply" marks
+   the ones that belong on a reply envelope. This is a working subset, not
+   the whole published table, so an unlisted code is reported as unknown. */
+const STID_BUILTIN = {
+  "040": ["First-Class Mail, basic, destination IMb tracing", "outbound"],
+  "042": ["Standard Mail, basic, destination IMb tracing", "outbound"],
+  "044": ["Periodicals, manual address correction", "outbound"],
+  "231": ["USPS Marketing Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "241": ["First-Class Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "261": ["Standard Mail, no services", "outbound"],
+  "270": ["First-Class Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "271": ["USPS Marketing Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "300": ["First-Class Mail, no services", "outbound"],
+  "401": ["Bound Printed Matter, no services", "outbound"],
+  "703": ["Courtesy reply mail", "reply"],
+  "708": ["Business reply mail, no services", "reply"],
+  "710": ["Priority Mail, no services", "outbound"],
+  "712": ["Priority Mail Flat Rate, no services", "outbound"],
+  "747": ["First-Class Political Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "748": ["USPS Political Marketing Mail, Full-Service with IV tracking, no ACS", "outbound"],
+  "768": ["First-Class Political Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
+  "781": ["USPS Political Marketing Mail, Full-Service with IV tracking, ACS Change Service Option 1", "outbound"]
+};
+$("lic").value = store.get("dbr_lic", "");
+$("stids").value = store.get("imb_stids", "");
+$("piece").value = store.get("imb_piece", "reply");
+$("piece").addEventListener("change", e => store.set("imb_piece", e.target.value));
+$("saveLic").addEventListener("click", () => {
+  store.set("dbr_lic", $("lic").value.trim());
+  alert("Saved. Reload the page to apply.");
+});
+$("saveStids").addEventListener("click", () => {
+  store.set("imb_stids", $("stids").value);
+  renderStidList();
+  alert("Saved.");
+});
+
+function stidTable(){
+  const t = {};
+  Object.keys(STID_BUILTIN).forEach(code => {
+    t[code] = { desc: STID_BUILTIN[code][0], reply: STID_BUILTIN[code][1] === "reply", added: false };
+  });
+  // User additions sit on top, so a code can also be corrected locally.
+  $("stids").value.split("\n").forEach(line => {
+    const p = line.split(",").map(x => x.trim());
+    if (p[0] && /^\d{3}$/.test(p[0]))
+      t[p[0]] = { desc: p[1] || "", reply: /^(y|reply)/i.test(p[p.length - 1] || ""), added: true };
+  });
+  return t;
+}
+
+function renderStidList(){
+  const t = stidTable();
+  const rows = Object.keys(t).sort().map(code =>
+    '<tr><td class="v" style="width:70px">' + esc(code) + '</td>' +
+    '<td>' + esc(t[code].desc) +
+    (t[code].reply ? ' <span class="badge ok">REPLY</span>' : '') +
+    (t[code].added ? ' <span class="badge unk">YOURS</span>' : '') + '</td></tr>').join("");
+  $("stidList").innerHTML = '<table><tbody>' + rows + '</tbody></table>';
+}
+
+/* ---------- license ----------
+   Web trial key for localhost and laraburford-prog.github.io, expires 2026-10-05.
+   Anything pasted into the License box on the page overrides this.     */
+const BUILT_IN_LICENSE = "DLS2eyJoYW5kc2hha2VDb2RlIjoiMTA2NDA0NTg4LU1UQTJOREEwTlRnNExYZGxZaTFVY21saGJGQnliMm8iLCJtYWluU2VydmVyVVJMIjoiaHR0cHM6Ly9tZGxzLmR5bmFtc29mdG9ubGluZS5jb20vIiwib3JnYW5pemF0aW9uSUQiOiIxMDY0MDQ1ODgiLCJzdGFuZGJ5U2VydmVyVVJMIjoiaHR0cHM6Ly9zZGxzLmR5bmFtc29mdG9ubGluZS5jb20vIiwiY2hlY2tDb2RlIjoxMDU5OTU3MzU2fQ==";   // Dynamsoft web trial
+const licenseKey = () => store.get("dbr_lic", "") || BUILT_IN_LICENSE;
+
+/* ---------- IMb field parsing ----------
+   31 digits: barcode ID (2) + service type (3) + mailer ID (6 or 9)
+   + serial (9 or 6) + routing code (0, 5, 9 or 11).
+   Mailer ID is 9 digits when its first digit is 9, otherwise 6.
+   Reply mail may instead carry a 15-digit customer number in place of
+   the mailer ID and serial number, so both readings are shown.        */
+function parseIMb(raw){
+  const d = String(raw).replace(/\D/g, "");
+  const out = { digits: d, errors: [] };
+
+  if (![20, 25, 29, 31].includes(d.length)){
+    out.errors.push(d.length + " digits. An IMb carries 20, 25, 29 or 31.");
+    if (d.length < 20) return out;
+  }
+  out.barcodeId   = d.slice(0, 2);
+  out.serviceType = d.slice(2, 5);
+  const midIs9    = d[5] === "9";
+  out.mailerId    = midIs9 ? d.slice(5, 14) : d.slice(5, 11);
+  out.serial      = midIs9 ? d.slice(14, 20) : d.slice(11, 20);
+  out.customerNumber = d.slice(5, 20);   // the reply-mail reading
+  out.routing     = d.slice(20);
+
+  // barcode identifier: second digit is the optional endorsement line code, 0-4
+  if (!/^[0-9][0-4]$/.test(out.barcodeId))
+    out.errors.push("Barcode identifier " + out.barcodeId + " is not valid. The second digit must be 0 to 4.");
+
+  if (![0, 5, 9, 11].includes(out.routing.length))
+    out.errors.push("Routing code is " + out.routing.length + " digits. It must be 0, 5, 9 or 11.");
+
+  // A routing code of all zeros routes nowhere. But this reader has been seen
+  // to return zeros when the bars actually carry a valid routing code, so this
+  // is recorded as suspect and judged later against where the digits came from.
+  out.zeroRouting = out.routing.length >= 5 && /^0+$/.test(out.routing.slice(0, 9));
+
+  out.zip   = out.routing.slice(0, 5);
+  out.plus4 = out.routing.slice(5, 9);
+  out.dp    = out.routing.slice(9, 11);
+  return out;
+}
+
+function checkAgainstZip(p, typed){
+  const t = String(typed || "").replace(/\D/g, "");
+  if (!t) return { state: "unknown", text: "No ZIP+4 entered, so routing was not checked." };
+  if (!p.routing || p.routing.length < 5)
+    return { state: "bad", text: "The barcode carries no routing code, so it cannot route to the reply address." };
+  if (t.length >= 9){
+    const want = t.slice(0, 9), got = p.routing.slice(0, 9);
+    return got === want
+      ? { state: "ok",  text: "Routing " + got.slice(0,5) + "-" + got.slice(5) + " matches the printed address." }
+      : { state: "bad", text: "Barcode routes to " + got.slice(0,5) + "-" + got.slice(5) +
+                              ". The piece is printed " + want.slice(0,5) + "-" + want.slice(5) + "." };
+  }
+  const want = t.slice(0, 5), got = p.routing.slice(0, 5);
+  return got === want
+    ? { state: "ok",  text: "ZIP " + got + " matches. Enter the full ZIP+4 to check the add-on too." }
+    : { state: "bad", text: "Barcode routes to ZIP " + got + ". The piece is printed " + want + "." };
+}
+
+/* ---------- rendering ---------- */
+let session = [];
+
+function render(p, raw, source){
+  const tbl = stidTable();
+  const st  = tbl[p.serviceType];
+  const zipCheck = checkAgainstZip(p, $("zip").value);
+
+  const problems = p.errors.slice();
+  if (zipCheck.state === "bad") problems.push(zipCheck.text);
+  const fromScan = source !== "manual";
+  const readerSuspect = p.zeroRouting && fromScan;
+  if (p.zeroRouting && !fromScan)
+    problems.push("Routing code is all zeros, so this will not sort to the reply address.");
+
+  const piece = $("piece").value;
+  if (st && piece === "reply" && !st.reply)
+    problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
+                  '", which is not a reply-mail code. On a reply envelope that is usually wrong.');
+  if (st && piece === "outbound" && st.reply)
+    problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
+                  '", which belongs on a reply envelope, not an outer envelope.');
+
+  const verdict = readerSuspect
+    ? '<div class="verdict unk">Reader could not read the routing code<small>' +
+      'The scanner returned an all-zero routing code. On this scanner that has been a misread, not a fault on the piece. ' +
+      'Read the digits with another tool and type them in below before acting on this.</small></div>'
+    : problems.length
+    ? '<div class="verdict no">Do not approve<small>' + problems.map(esc).join("<br>") + '</small></div>'
+    : zipCheck.state === "unknown"
+      ? '<div class="verdict unk">Not verified<small>' + esc(zipCheck.text) +
+        ' The barcode itself is well formed, but nothing was compared against it.</small></div>'
+      : '<div class="verdict ok">Checks passed<small>' + esc(zipCheck.text) + '</small></div>';
+
+  const stBadge = !st
+    ? '<span class="badge unk">NOT IN YOUR TABLE</span>'
+    : st.reply ? '<span class="badge ok">REPLY MAIL</span>' : '<span class="badge no">NOT REPLY MAIL</span>';
+
+  const rows = [
+    ["Barcode identifier", p.barcodeId, ""],
+    ["Service type", p.serviceType + " " + (st ? st.desc : ""), stBadge],
+    ["Mailer ID", p.mailerId, '<span class="badge unk">' + (p.mailerId || "").length + ' DIGIT</span>'],
+    ["Serial number", p.serial, ""],
+    ["Customer number", p.customerNumber, '<span class="badge unk">REPLY READING</span>'],
+    ["Routing code", p.routing ? p.zip + (p.plus4 ? "-" + p.plus4 : "") + (p.dp ? " DP " + p.dp : "") : "none", ""]
+  ].map(r => '<tr><td class="k">' + esc(r[0]) + '</td><td class="v">' + esc(r[1] || "—") + " " + r[2] + '</td></tr>').join("");
+
+  const segs = p.digits.length >= 20
+    ? [["s0", p.barcodeId], ["s1", p.serviceType], ["s2", p.mailerId], ["s3", p.serial], ["s4", p.routing]]
+        .filter(s => s[1]).map(s => '<span class="seg ' + s[0] + '">' + esc(s[1]) + '</span>').join("")
+    : esc(p.digits);
+
+  $("result").innerHTML =
+    '<div class="card"><h2>Result</h2><div class="body">' + verdict +
+    '<div class="raw">' + segs + '</div>' +
+    '<div class="legend">' +
+      '<span><b class="s0"></b> barcode ID</span>' +
+      '<span><b class="s1"></b> service type</span>' +
+      '<span><b class="s2"></b> mailer ID</span>' +
+      '<span><b class="s3"></b> serial</span>' +
+      '<span><b class="s4"></b> routing</span>' +
+    '</div>' +
+    '<table style="margin-top:12px"><tbody>' + rows + '</tbody></table>' +
+    '<p class="note" style="margin:12px 0 0">Reply mail can carry a 15-digit customer number where outbound mail carries a mailer ID and serial number, so both readings are shown. Which applies depends on how the barcode was built.</p>' +
+    '</div></div>';
+
+  session.unshift({ time: new Date().toLocaleTimeString(), raw: raw, zip: $("zip").value,
+                    routing: p.routing, stid: p.serviceType,
+                    pass: readerSuspect || problems.length === 0,
+                    checked: !readerSuspect && zipCheck.state !== "unknown" });
+  renderLog();
+}
+
+function renderLog(){
+  if (!session.length){ $("log").innerHTML = '<p class="note">Nothing scanned yet.</p>'; return; }
+  const distinct = new Set(session.map(s => s.routing)).size;
+  const head = (session.length > 1 && distinct > 1)
+    ? '<div class="warn">' + distinct + ' different routing codes in this session. If these pieces are all from one job, that needs explaining.</div>'
+    : "";
+  $("log").innerHTML = head +
+    '<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>' +
+    session.map(s =>
+      '<tr class="' + (!s.pass ? "bad" : s.checked ? "good" : "") + '"><td class="v">' + esc(s.time) + '</td>' +
+      '<td class="v">' + esc(s.routing || "none") + '</td><td class="v">' + esc(s.stid || "") + '</td>' +
+      '<td><span class="badge ' + (s.pass ? "ok" : "no") + '">' + (s.pass ? "PASS" : "FAIL") + '</span></td></tr>'
+    ).join("") + '</tbody></table>';
+}
+
+$("manualBtn").addEventListener("click", () => {
+  const d = $("manual").value.replace(/\D/g, "");
+  if (!d) { $("manual").focus(); return; }
+  render(parseIMb(d), d, "manual");
+});
+
+$("clearBtn").addEventListener("click", () => { session = []; renderLog(); $("result").innerHTML = ""; });
+$("exportBtn").addEventListener("click", () => {
+  if (!session.length) return;
+  const csv = ["time,barcode,printed_zip,routing,service_type,result"].concat(
+    session.map(s => [s.time, s.raw, s.zip, s.routing, s.stid, s.pass ? "PASS" : "FAIL"]
+      .map(x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"').join(","))
+  ).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  a.download = "imb-check-" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click(); URL.revokeObjectURL(a.href);
+});
+
+
+
+/* ---------- scanner ---------- */
+let scanner = null;
+
+(async function(){
+  const key = licenseKey();
+  if (!key) {
+    $("sdkNote").innerHTML = '<span style="color:var(--amber)">No license key yet. Paste a Dynamsoft trial key in the License card below, then reload.</span>';
+    $("scanBtn").disabled = true;
+    return;
+  }
+  try {
+    // The IMb format constant is a BigInt on EnumBarcodeFormat. Resolve it at
+    // runtime rather than hard-coding, and fall back to all postal symbologies.
+    const E = Dynamsoft.EnumBarcodeFormat || {};
+    const imb = E.BF_USPSINTELLIGENTMAIL || E.BF_POSTALCODE || null;
+
+    scanner = new Dynamsoft.BarcodeScanner({
+      license: key,
+      barcodeFormats: imb ? [imb] : undefined,
+      scanMode: (Dynamsoft.EnumScanMode || {}).SM_SINGLE,
+      showResultView: false,
+      showUploadImageButton: true,
+      engineResourcePaths: { rootDirectory: "https://cdn.jsdelivr.net/npm/" }
+    });
+    $("sdkNote").textContent = "Scanner ready." + (imb ? " Intelligent Mail only." : " All postal formats.");
+  } catch (e) {
+    $("sdkNote").innerHTML = '<span style="color:var(--fail)">Scanner failed to load: ' + esc(e.message || e) + '</span>';
+    $("scanBtn").disabled = true;
+  }
+})();
+
+$("scanBtn").addEventListener("click", async () => {
+  if (!scanner) return;
+  try {
+    const result = await scanner.launch();
+    const items = (result && result.barcodeResults) || [];
+    if (!items.length) return;
+
+    const item = items[0];
+    const raw = item.text || "";
+    render(parseIMb(raw), raw, "scan");
+
+    const probe = {
+      status: result.status && result.status.code,
+      itemsReturned: items.length,
+      itemKeys: Object.keys(item),
+      formatString: item.formatString,
+      textVerbatim: JSON.stringify(item.text),
+      textLength: (item.text || "").length,
+      digitsOnly: String(item.text || "").replace(/\D/g, ""),
+      digitCount: String(item.text || "").replace(/\D/g, "").length,
+      confidence: item.confidence,
+      bytesLength: item.bytes ? item.bytes.length : null,
+      bytesAsText: item.bytes ? Array.from(item.bytes).map(function(x){
+        return (x >= 32 && x < 127) ? String.fromCharCode(x) : "."; }).join("") : null
+    };
+    const box = document.createElement("div");
+    box.className = "card";
+    box.innerHTML = '<h2>What the SDK returned</h2><div class="body">' +
+      '<div class="raw">' + esc(JSON.stringify(probe, null, 1)) + '</div>' +
+      '<div class="row" style="margin-top:10px"><button class="ghost" id="copyProbe">Copy this</button></div></div>';
+    $("result").appendChild(box);
+    const cp = document.getElementById("copyProbe");
+    if (cp) cp.addEventListener("click", () => {
+      navigator.clipboard.writeText(JSON.stringify(probe, null, 1)).then(
+        () => { cp.textContent = "Copied"; },
+        () => { cp.textContent = "Select the text above and copy it"; }
+      );
+    });
+  } catch (e) {
+    alert("Scan failed: " + (e.message || e));
+  }
+});
+
+renderLog();
+renderStidList();
+</script>
+</body>
+</html>
