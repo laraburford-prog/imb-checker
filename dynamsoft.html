@@ -120,6 +120,18 @@
   </details>
 </div></div>
 
+<div class="card"><h2>Scanner settings</h2><div class="body">
+  <label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--ink);display:flex;gap:8px;align-items:center">
+    <input type="checkbox" id="onlyimb" style="width:auto"> Intelligent Mail only
+  </label>
+  <p class="note" style="margin:8px 0 0">Leave this off while testing. If the reader is restricted to one format and that filter is wrong, nothing scans at all and it looks like a camera problem.</p>
+  <div class="field" style="margin-top:14px">
+    <label for="photo">Or decode a photo instead of live camera</label>
+    <input type="file" id="photo" accept="image/*" style="font-family:var(--sans);font-size:14px">
+  </div>
+  <p class="note" style="margin:8px 0 0">Take a close, straight-on photo with your normal camera app and pick it here. A high-resolution still often reads fine postal bars better than live video.</p>
+</div></div>
+
 <div class="card"><h2>License</h2><div class="body">
   <p class="note">A Dynamsoft web trial key is built into this page. Paste a different one here only to override it. Their trial runs 30 days and renews twice from the customer portal.</p>
   <div class="field"><label for="lic">Dynamsoft trial license key</label>
@@ -375,76 +387,134 @@ $("exportBtn").addEventListener("click", () => {
 
 /* ---------- scanner ---------- */
 let scanner = null;
+const diagLines = [];
+function diag(msg){
+  diagLines.push(msg);
+  $("sdkNote").innerHTML = diagLines.map(esc).join("<br>");
+}
+
+$("onlyimb").checked = store.get("dbr_onlyimb", "") === "1";
+$("onlyimb").addEventListener("change", e => {
+  store.set("dbr_onlyimb", e.target.checked ? "1" : "0");
+  location.reload();
+});
 
 (async function(){
-  const key = licenseKey();
-  if (!key) {
-    $("sdkNote").innerHTML = '<span style="color:var(--amber)">No license key yet. Paste a Dynamsoft trial key in the License card below, then reload.</span>';
-    $("scanBtn").disabled = true;
-    return;
-  }
   try {
-    // The IMb format constant is a BigInt on EnumBarcodeFormat. Resolve it at
-    // runtime rather than hard-coding, and fall back to all postal symbologies.
-    const E = Dynamsoft.EnumBarcodeFormat || {};
-    const imb = E.BF_USPSINTELLIGENTMAIL || E.BF_POSTALCODE || null;
+    if (typeof Dynamsoft === "undefined") {
+      diag("The Dynamsoft library did not load at all. Check the connection and reload.");
+      $("scanBtn").disabled = true;
+      return;
+    }
+    diag("Library loaded.");
 
-    scanner = new Dynamsoft.BarcodeScanner({
-      license: key,
-      barcodeFormats: imb ? [imb] : undefined,
-      scanMode: (Dynamsoft.EnumScanMode || {}).SM_SINGLE,
-      showResultView: false,
-      showUploadImageButton: true,
-      engineResourcePaths: { rootDirectory: "https://cdn.jsdelivr.net/npm/" }
-    });
-    $("sdkNote").textContent = "Scanner ready." + (imb ? " Intelligent Mail only." : " All postal formats.");
+    const key = licenseKey();
+    if (!key) {
+      diag("No license key. Paste one into the License card below, then reload.");
+      $("scanBtn").disabled = true;
+      return;
+    }
+    // The license must be initialized before anything else touches the engine.
+    await Dynamsoft.License.LicenseManager.initLicense(key);
+    diag("License accepted.");
+
+    // Pull the decoder down in advance so the first scan is not a cold start.
+    Dynamsoft.Core.CoreModule.loadWasm();
+    diag("Decoder loading.");
+
+    const E = Dynamsoft.EnumBarcodeFormat || (Dynamsoft.Core && Dynamsoft.Core.EnumBarcodeFormat) || {};
+    const imb = E.BF_USPSINTELLIGENTMAIL;
+    const onlyImb = $("onlyimb").checked;
+
+    const cfg = { license: key, showResultView: false, showUploadImageButton: true };
+    if (onlyImb && imb) cfg.barcodeFormats = [imb];
+
+    scanner = new Dynamsoft.BarcodeScanner(cfg);
+    diag(onlyImb && imb ? "Ready. Intelligent Mail only." : "Ready. Reading every barcode format.");
   } catch (e) {
-    $("sdkNote").innerHTML = '<span style="color:var(--fail)">Scanner failed to load: ' + esc(e.message || e) + '</span>';
+    diag("Setup failed: " + (e.message || e));
     $("scanBtn").disabled = true;
   }
 })();
 
+// Results come back in different shapes depending on which call produced them.
+function firstBarcode(result){
+  if (!result) return null;
+  const lists = [
+    result.barcodeResults,
+    result.barcodeResultItems,
+    result.decodedBarcodesResult && result.decodedBarcodesResult.barcodeResultItems,
+    result.items
+  ];
+  for (const list of lists) if (list && list.length) return list[0];
+  return null;
+}
+
+function handleItem(item, result){
+  const raw = item.text || "";
+  render(parseIMb(raw), raw, "scan");
+
+  const probe = {
+    itemKeys: Object.keys(item),
+    formatString: item.formatString,
+    textVerbatim: JSON.stringify(item.text),
+    textLength: (item.text || "").length,
+    digitsOnly: String(item.text || "").replace(/\D/g, ""),
+    digitCount: String(item.text || "").replace(/\D/g, "").length,
+    confidence: item.confidence,
+    bytesLength: item.bytes ? item.bytes.length : null,
+    bytesAsText: item.bytes ? Array.from(item.bytes).map(function(x){
+      return (x >= 32 && x < 127) ? String.fromCharCode(x) : "."; }).join("") : null
+  };
+  const box = document.createElement("div");
+  box.className = "card";
+  box.innerHTML = '<h2>What the SDK returned</h2><div class="body">' +
+    '<div class="raw">' + esc(JSON.stringify(probe, null, 1)) + '</div>' +
+    '<div class="row" style="margin-top:10px"><button class="ghost" id="copyProbe">Copy this</button></div></div>';
+  $("result").appendChild(box);
+  const cp = document.getElementById("copyProbe");
+  if (cp) cp.addEventListener("click", () => {
+    navigator.clipboard.writeText(JSON.stringify(probe, null, 1)).then(
+      () => { cp.textContent = "Copied"; },
+      () => { cp.textContent = "Select the text above and copy it"; }
+    );
+  });
+}
+
 $("scanBtn").addEventListener("click", async () => {
-  if (!scanner) return;
+  if (!scanner) { alert("The scanner is not ready. Read the status under the button."); return; }
   try {
     const result = await scanner.launch();
-    const items = (result && result.barcodeResults) || [];
-    if (!items.length) return;
-
-    const item = items[0];
-    const raw = item.text || "";
-    render(parseIMb(raw), raw, "scan");
-
-    const probe = {
-      status: result.status && result.status.code,
-      itemsReturned: items.length,
-      itemKeys: Object.keys(item),
-      formatString: item.formatString,
-      textVerbatim: JSON.stringify(item.text),
-      textLength: (item.text || "").length,
-      digitsOnly: String(item.text || "").replace(/\D/g, ""),
-      digitCount: String(item.text || "").replace(/\D/g, "").length,
-      confidence: item.confidence,
-      bytesLength: item.bytes ? item.bytes.length : null,
-      bytesAsText: item.bytes ? Array.from(item.bytes).map(function(x){
-        return (x >= 32 && x < 127) ? String.fromCharCode(x) : "."; }).join("") : null
-    };
-    const box = document.createElement("div");
-    box.className = "card";
-    box.innerHTML = '<h2>What the SDK returned</h2><div class="body">' +
-      '<div class="raw">' + esc(JSON.stringify(probe, null, 1)) + '</div>' +
-      '<div class="row" style="margin-top:10px"><button class="ghost" id="copyProbe">Copy this</button></div></div>';
-    $("result").appendChild(box);
-    const cp = document.getElementById("copyProbe");
-    if (cp) cp.addEventListener("click", () => {
-      navigator.clipboard.writeText(JSON.stringify(probe, null, 1)).then(
-        () => { cp.textContent = "Copied"; },
-        () => { cp.textContent = "Select the text above and copy it"; }
-      );
-    });
+    const item = firstBarcode(result);
+    if (!item) {
+      $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' +
+        'Nothing was decoded. If the bars filled the frame and it still found nothing, try the photo option, ' +
+        'or turn off "Intelligent Mail only" so it reads every format.</div></div></div>';
+      return;
+    }
+    handleItem(item, result);
   } catch (e) {
     alert("Scan failed: " + (e.message || e));
   }
+});
+
+$("photo").addEventListener("change", async e => {
+  const f = e.target.files[0]; if (!f) return;
+  if (!scanner) { alert("The scanner is not ready."); return; }
+  try {
+    const result = await scanner.decode(f);
+    const item = firstBarcode(result);
+    if (!item) {
+      $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' +
+        'No barcode found in that photo. Get closer, keep the phone parallel to the envelope, and avoid shadow across the bars.' +
+        '</div></div></div>';
+    } else {
+      handleItem(item, result);
+    }
+  } catch (err) {
+    alert("Could not read that photo: " + (err.message || err));
+  }
+  e.target.value = "";
 });
 
 renderLog();
