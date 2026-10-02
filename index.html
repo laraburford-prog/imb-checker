@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IMb Checker</title>
-<script src="https://cdn.jsdelivr.net/npm/scanbot-web-sdk@latest/bundle/ScanbotSDK.ui2.min.js"></script>
 <style>
   :root{
     --paper:#EDF1F4; --surface:#FFFFFF; --ink:#13202B; --muted:#5C6C7B;
@@ -20,24 +19,21 @@
   header{border-bottom:2px solid var(--ink);padding-bottom:12px;margin-bottom:16px}
   h1{font-size:18px;font-weight:650;margin:0}
   header p{margin:4px 0 0;color:var(--muted);font-size:13px}
-
   .card{background:var(--surface);border:1px solid var(--rule);border-radius:3px;margin-bottom:14px}
   .card > h2{font-size:10.5px;font-weight:680;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);
              margin:0;padding:10px 13px;border-bottom:1px solid var(--rule)}
   .card .body{padding:13px}
   label{display:block;font-size:11px;font-weight:620;letter-spacing:.04em;text-transform:uppercase;
         color:var(--muted);margin:0 0 5px}
-  input,textarea{width:100%;font-family:var(--mono);font-size:16px;color:var(--ink);background:var(--surface);
-                 border:1px solid var(--rule);border-radius:2px;padding:9px}
+  input[type=text],select,textarea{width:100%;font-family:var(--mono);font-size:16px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--rule);border-radius:2px;padding:9px}
+  select{font-family:var(--sans)}
   .field{margin-bottom:12px} .field:last-child{margin-bottom:0}
   :focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
-
   button{font-family:var(--sans);font-size:15px;font-weight:600;background:var(--ink);color:#fff;
-         border:1px solid var(--ink);border-radius:2px;padding:12px 18px;cursor:pointer;width:100%}
+         border:1px solid var(--ink);border-radius:2px;padding:13px 18px;cursor:pointer;width:100%}
   button.ghost{background:transparent;color:var(--ink);border-color:var(--rule);font-size:13px;padding:8px 13px;width:auto}
-  button:disabled{opacity:.45}
   .row{display:flex;gap:8px;flex-wrap:wrap}
-
   .note{font-size:12.5px;color:var(--muted);margin:0 0 10px}
   .warn{background:var(--amber-bg);border-left:3px solid var(--amber);color:#54410A;padding:9px 12px;
         font-size:13px;margin:0 0 12px;border-radius:0 2px 2px 0}
@@ -45,27 +41,25 @@
   .verdict.ok{background:var(--pass-bg);color:var(--pass)}
   .verdict.no{background:var(--fail-bg);color:var(--fail)}
   .verdict.unk{background:var(--amber-bg);color:#54410A}
-  .verdict small{display:block;font-weight:400;font-size:13px;margin-top:3px;opacity:.85}
-
+  .verdict small{display:block;font-weight:400;font-size:13px;margin-top:3px;opacity:.9}
   table{width:100%;border-collapse:collapse;font-size:14px}
-  th{font-size:9.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
-     text-align:left;padding:0 8px 5px;border-bottom:1px solid var(--rule)}
   td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
   tr:last-child td{border-bottom:none}
+  th{font-size:9.5px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+     text-align:left;padding:0 8px 5px;border-bottom:1px solid var(--rule)}
   .k{font-weight:620;white-space:nowrap;width:42%}
   .v{font-family:var(--mono);font-size:13.5px;overflow-wrap:anywhere}
-  tr.bad td{background:var(--fail-bg)}
-  tr.good td{background:var(--pass-bg)}
+  tr.bad td{background:var(--fail-bg)} tr.good td{background:var(--pass-bg)}
   .badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:2px}
   .badge.ok{background:var(--pass-bg);color:var(--pass)}
   .badge.no{background:var(--fail-bg);color:var(--fail)}
   .badge.unk{background:var(--amber-bg);color:var(--amber)}
-  .raw{font-family:var(--mono);font-size:13px;word-break:break-all;background:var(--paper);padding:9px;border-radius:2px}
-  .seg{display:inline-block;padding:1px 3px;border-radius:2px;margin-right:1px}
-  .s0{background:#DCE7EF} .s1{background:#E7DCEF} .s2{background:#DCEFE2} .s3{background:#EFE7DC} .s4{background:#EFDCDC}
-  .legend{font-size:11px;color:var(--muted);margin-top:6px}
-  .legend span{margin-right:10px}
-  .legend b{display:inline-block;width:14px;height:10px;border-radius:2px}
+  .raw{font-family:var(--mono);font-size:11.5px;word-break:break-all;background:var(--paper);padding:9px;border-radius:2px;line-height:1.6}
+  canvas{max-width:100%;border:1px solid var(--rule);border-radius:2px;display:block;margin-top:10px}
+  .shot{display:block;width:100%;padding:16px;text-align:center;background:var(--ink);color:#fff;
+        border-radius:2px;font-weight:600;cursor:pointer}
+  ul.tips{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--muted)}
+  ul.tips li{margin-bottom:3px}
 </style>
 </head>
 <body>
@@ -73,34 +67,35 @@
 
 <header>
   <h1>IMb Checker</h1>
-  <p>Scan the barcode on a business reply envelope and check it against the address printed on the piece.</p>
+  <p>Photograph the barcode on a reply envelope and check it against the address printed on the piece.</p>
 </header>
 
-<div class="card"><h2>Scan</h2><div class="body">
+<div class="card"><h2>Check a piece</h2><div class="body">
   <div class="field">
     <label for="zip">ZIP+4 printed on the piece</label>
-    <input type="text" id="zip" inputmode="numeric" placeholder="10249-6118" autocomplete="off">
+    <input type="text" id="zip" inputmode="numeric" placeholder="15264-3700" autocomplete="off">
   </div>
   <div class="field">
-    <label for="piece">What are you scanning</label>
-    <select id="piece" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
+    <label for="piece">What are you checking</label>
+    <select id="piece">
       <option value="reply">Reply envelope, BRE or CRE</option>
       <option value="outbound">Outer envelope</option>
     </select>
   </div>
-  <button id="scanBtn">Scan the barcode</button>
-  <div class="field" style="margin-top:12px">
-    <label for="manual">Or type the digits from another reader</label>
-    <input type="text" id="manual" inputmode="numeric" placeholder="31 digits" autocomplete="off">
-  </div>
-  <button class="ghost" id="manualBtn" style="width:100%">Check these digits</button>
-  <p class="note" id="sdkNote" style="margin-top:10px">Loading scanner…</p>
+  <label class="shot" for="photo">Take a photo of the barcode</label>
+  <input type="file" id="photo" accept="image/*" capture="environment" hidden>
+  <ul class="tips">
+    <li>Fill the frame with the barcode, left edge to right edge.</li>
+    <li>Hold the phone square to the envelope, not at an angle.</li>
+    <li>Flat, even light. Avoid shadow falling across the bars.</li>
+  </ul>
+  <p class="note" id="status" style="margin-top:10px"></p>
 </div></div>
 
 <div id="result"></div>
 
 <div class="card"><h2>Session</h2><div class="body">
-  <div id="log"><p class="note">Nothing scanned yet.</p></div>
+  <div id="log"><p class="note">Nothing checked yet.</p></div>
   <div class="row" style="margin-top:10px">
     <button class="ghost" id="exportBtn">Export CSV</button>
     <button class="ghost" id="clearBtn">Clear session</button>
@@ -120,63 +115,34 @@
   </details>
 </div></div>
 
-<div class="card"><h2>Scanner settings</h2><div class="body">
-  <p class="note">Tune these on the phone. An IMb is long and short, so a wide window and some zoom help a lot.</p>
-  <div class="field">
-    <label for="shape">Window shape</label>
-    <select id="shape" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
-      <option value="6">Very wide, 6 to 1</option>
-      <option value="4">Wide, 4 to 1</option>
-      <option value="3">Medium, 3 to 1</option>
-      <option value="1">Square, 1 to 1</option>
-    </select>
-  </div>
-  <div class="field">
-    <label for="zoom">Starting zoom</label>
-    <select id="zoom" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
-      <option value="1">1x</option><option value="2">2x</option><option value="3">3x</option>
-    </select>
-  </div>
-  <div class="field">
-    <label for="fmts">Barcode formats</label>
-    <select id="fmts" style="width:100%;font-family:var(--sans);font-size:15px;padding:9px;border:1px solid var(--rule);border-radius:2px;background:var(--surface);color:var(--ink)">
-      <option value="imb">Intelligent Mail only</option>
-      <option value="all">Every format the SDK knows</option>
-    </select>
-  </div>
-  <label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--ink);display:flex;gap:8px;align-items:center">
-    <input type="checkbox" id="diag" style="width:auto"> Show the raw scan result
-  </label>
-  <p class="note" id="cfgNote" style="margin:10px 0 0"></p>
-</div></div>
-
-<div class="card"><h2>License</h2><div class="body">
-  <p class="note">A trial key for laraburford-prog.github.io is built into this page and runs until October 5. Paste a different key here only if you need to override it.</p>
-  <div class="field">
-    <label class="chk" style="text-transform:none;letter-spacing:0;font-size:14px;font-weight:400;color:var(--ink);display:flex;gap:8px;align-items:center">
-      <input type="checkbox" id="nolic" style="width:auto"> Run without a license, 60 seconds per session
-    </label>
-  </div>
-  <div class="field"><label for="lic">Trial license key</label>
-    <textarea id="lic" rows="2" spellcheck="false" placeholder="a key is already built in; paste here only to override it"></textarea></div>
-  <button class="ghost" id="saveLic">Save key</button>
-</div></div>
-
 </div>
 
 <script>
+/* ===== bundled USPS Intelligent Mail encoder/decoder, CC0 ===== */
+(()=>{var Ue=Object.defineProperty;var Bn=Object.getOwnPropertyDescriptor;var On=Object.getOwnPropertyNames;var Mn=Object.prototype.hasOwnProperty;var i=(r,t,e)=>()=>{if(e)throw e[0];try{return r&&(t=r(r=0)),t}catch(o){throw e=[o],o}};var Qr=(r,t)=>()=>{try{return t||r((t={exports:{}}).exports,t),t.exports}catch(e){throw t=0,e}},Mf=(r,t)=>{for(var e in t)Ue(r,e,{get:t[e],enumerable:!0})},Pn=(r,t,e,o)=>{if(t&&typeof t=="object"||typeof t=="function")for(let f of On(t))!Mn.call(r,f)&&f!==e&&Ue(r,f,{get:()=>t[f],enumerable:!(o=Bn(t,f))||o.enumerable});return r};var Ze=r=>Pn(Ue({},"__esModule",{value:!0}),r);var jr,Ke,rt,Mt,Xe,Pf,X,$,Df,Ge,Ff,Lf,$e,Ye,Je,Nf,zf,Pt,He,Rf,_=i(()=>{jr="1.13.8",Ke=typeof self=="object"&&self.self===self&&self||typeof global=="object"&&global.global===global&&global||Function("return this")()||{},rt=Array.prototype,Mt=Object.prototype,Xe=typeof Symbol<"u"?Symbol.prototype:null,Pf=rt.push,X=rt.slice,$=Mt.toString,Df=Mt.hasOwnProperty,Ge=typeof ArrayBuffer<"u",Ff=typeof DataView<"u",Lf=Array.isArray,$e=Object.keys,Ye=Object.create,Je=Ge&&ArrayBuffer.isView,Nf=isNaN,zf=isFinite,Pt=!{toString:null}.propertyIsEnumerable("toString"),He=["valueOf","isPrototypeOf","toString","propertyIsEnumerable","hasOwnProperty","toLocaleString"],Rf=Math.pow(2,53)-1});function d(r,t){return t=t==null?r.length-1:+t,function(){for(var e=Math.max(arguments.length-t,0),o=Array(e),f=0;f<e;f++)o[f]=arguments[f+t];switch(t){case 0:return r.call(this,o);case 1:return r.call(this,arguments[0],o);case 2:return r.call(this,arguments[0],arguments[1],o)}var a=Array(t+1);for(f=0;f<t;f++)a[f]=arguments[f];return a[t]=o,r.apply(this,a)}}var D=i(()=>{});function T(r){var t=typeof r;return t==="function"||t==="object"&&!!r}var j=i(()=>{});function Dt(r){return r===null}var Vf=i(()=>{});function Er(r){return r===void 0}var Qe=i(()=>{});function Sr(r){return r===!0||r===!1||$.call(r)==="[object Boolean]"}var je=i(()=>{_()});function Ft(r){return!!(r&&r.nodeType===1)}var qf=i(()=>{});function c(r){var t="[object "+r+"]";return function(e){return $.call(e)===t}}var S=i(()=>{_()});var lr,Lt=i(()=>{S();lr=c("String")});var tt,ro=i(()=>{S();tt=c("Number")});var to,bf=i(()=>{S();to=c("Date")});var eo,Wf=i(()=>{S();eo=c("RegExp")});var oo,Uf=i(()=>{S();oo=c("Error")});var et,fo=i(()=>{S();et=c("Symbol")});var ot,ao=i(()=>{S();ot=c("ArrayBuffer")});var Zf,Dn,h,z=i(()=>{S();_();Zf=c("Function"),Dn=Ke.document&&Ke.document.childNodes;typeof/./!="function"&&typeof Int8Array!="object"&&typeof Dn!="function"&&(Zf=function(r){return typeof r=="function"||!1});h=Zf});var no,Kf=i(()=>{S();no=c("Object")});var Nt,Cr,Tr=i(()=>{_();Kf();Nt=Ff&&(!/\[native code\]/.test(String(DataView))||no(new DataView(new ArrayBuffer(8)))),Cr=typeof Map<"u"&&no(new Map)});function Ln(r){return r!=null&&h(r.getInt8)&&ot(r.buffer)}var Fn,rr,zt=i(()=>{S();z();ao();Tr();Fn=c("DataView");rr=Nt?Ln:Fn});var O,tr=i(()=>{_();S();O=Lf||c("Array")});function C(r,t){return r!=null&&Df.call(r,t)}var Y=i(()=>{_()});var io,mr,Rt=i(()=>{S();Y();io=c("Arguments");(function(){io(arguments)||(io=function(r){return C(r,"callee")})})();mr=io});function Vt(r){return!et(r)&&zf(r)&&!isNaN(parseFloat(r))}var Xf=i(()=>{_();fo()});function Br(r){return tt(r)&&Nf(r)}var uo=i(()=>{_();ro()});function Or(r){return function(){return r}}var lo=i(()=>{});function ft(r){return function(t){var e=r(t);return typeof e=="number"&&e>=0&&e<=Rf}}var mo=i(()=>{_()});function at(r){return function(t){return t?.[r]}}var po=i(()=>{});var pr,qt=i(()=>{po();pr=at("byteLength")});var Gf,$f=i(()=>{mo();qt();Gf=ft(pr)});function zn(r){return Je?Je(r)&&!rr(r):Gf(r)&&Nn.test($.call(r))}var Nn,nt,so=i(()=>{_();zt();lo();$f();Nn=/\[object ((I|Ui)nt(8|16|32)|Float(32|64)|Uint8Clamped|Big(I|Ui)nt64)Array\]/;nt=Ge?zn:Or(!1)});var g,R=i(()=>{po();g=at("length")});function Rn(r){for(var t={},e=r.length,o=0;o<e;++o)t[r[o]]=!0;return{contains:function(f){return t[f]===!0},push:function(f){return t[f]=!0,r.push(f)}}}function it(r,t){t=Rn(t);var e=He.length,o=r.constructor,f=h(o)&&o.prototype||Mt,a="constructor";for(C(r,a)&&!t.contains(a)&&t.push(a);e--;)a=He[e],a in r&&r[a]!==f[a]&&!t.contains(a)&&t.push(a)}var co=i(()=>{_();z();Y()});function s(r){if(!T(r))return[];if($e)return $e(r);var t=[];for(var e in r)C(r,e)&&t.push(e);return Pt&&it(r,t),t}var k=i(()=>{j();_();Y();co()});function bt(r){if(r==null)return!0;var t=g(r);return typeof t=="number"&&(O(r)||lr(r)||mr(r))?t===0:g(s(r))===0}var Yf=i(()=>{R();tr();Lt();Rt();k()});function Mr(r,t){var e=s(t),o=e.length;if(r==null)return!o;for(var f=Object(r),a=0;a<o;a++){var n=e[a];if(t[n]!==f[n]||!(n in f))return!1}return!0}var vo=i(()=>{k()});function p(r){if(r instanceof p)return r;if(!(this instanceof p))return new p(r);this._wrapped=r}var F=i(()=>{_();p.VERSION=jr;p.prototype.value=function(){return this._wrapped};p.prototype.valueOf=p.prototype.toJSON=p.prototype.value;p.prototype.toString=function(){return String(this._wrapped)}});function Wt(r){return new Uint8Array(r.buffer||r,r.byteOffset||0,pr(r))}var Jf=i(()=>{qt()});function Ut(r,t){for(var e=[{a:r,b:t}],o=[],f=[];e.length;){var a=e.pop();if(a===!0){o.pop(),f.pop();continue}if(r=a.a,t=a.b,r===t){if(r!==0||1/r===1/t)continue;return!1}if(r==null||t==null)return!1;if(r!==r){if(t!==t)continue;return!1}var n=typeof r;if(n!=="function"&&n!=="object"&&typeof t!="object")return!1;r instanceof p&&(r=r._wrapped),t instanceof p&&(t=t._wrapped);var u=$.call(r);if(u!==$.call(t))return!1;if(Nt&&u=="[object Object]"&&rr(r)){if(!rr(t))return!1;u=Hf}switch(u){case"[object RegExp]":case"[object String]":if(""+r==""+t)continue;return!1;case"[object Number]":e.push({a:+r,b:+t});continue;case"[object Date]":case"[object Boolean]":if(+r==+t)continue;return!1;case"[object Symbol]":if(Xe.valueOf.call(r)===Xe.valueOf.call(t))continue;return!1;case"[object ArrayBuffer]":case Hf:e.push({a:Wt(r),b:Wt(t)});continue}var l=u==="[object Array]";if(!l&&nt(r)){var m=pr(r);if(m!==pr(t))return!1;if(r.buffer===t.buffer&&r.byteOffset===t.byteOffset)continue;l=!0}if(!l){if(typeof r!="object"||typeof t!="object")return!1;var A=r.constructor,I=t.constructor;if(A!==I&&!(h(A)&&A instanceof A&&h(I)&&I instanceof I)&&"constructor"in r&&"constructor"in t)return!1}for(var x=o.length;x--;)if(o[x]===r){if(f[x]===t)break;return!1}if(!(x>=0))if(o.push(r),f.push(t),e.push(!0),l){if(x=r.length,x!==t.length)return!1;for(;x--;)e.push({a:r[x],b:t[x]})}else{var Hr=s(r),Ot;if(x=Hr.length,s(t).length!==x)return!1;for(;x--;){if(Ot=Hr[x],!C(t,Ot))return!1;e.push({a:r[Ot],b:t[Ot]})}}}return!0}var Hf,Qf=i(()=>{F();_();qt();so();z();Tr();zt();k();Y();Jf();Hf="[object DataView]"});function b(r){if(!T(r))return[];var t=[];for(var e in r)t.push(e);return Pt&&it(r,t),t}var Pr=i(()=>{j();_();co()});function Dr(r){var t=g(r);return function(e){if(e==null)return!1;var o=b(e);if(g(o))return!1;for(var f=0;f<t;f++)if(!h(e[r[f]]))return!1;return r!==xo||!h(e[ho])}}var ho,jf,go,ra,ta,xo,ea,Zt=i(()=>{R();z();Pr();ho="forEach",jf="has",go=["clear","delete"],ra=["get",jf,"set"],ta=go.concat(ho,ra),xo=go.concat(ra),ea=["add"].concat(go,ho,jf)});var yo,oa=i(()=>{S();Tr();Zt();yo=Cr?Dr(ta):c("Map")});var Ao,fa=i(()=>{S();Tr();Zt();Ao=Cr?Dr(xo):c("WeakMap")});var _o,aa=i(()=>{S();Tr();Zt();_o=Cr?Dr(ea):c("Set")});var wo,na=i(()=>{S();wo=c("WeakSet")});function L(r){for(var t=s(r),e=t.length,o=Array(e),f=0;f<e;f++)o[f]=r[t[f]];return o}var sr=i(()=>{k()});function Kt(r){for(var t=s(r),e=t.length,o=Array(e),f=0;f<e;f++)o[f]=[t[f],r[t[f]]];return o}var ia=i(()=>{k()});function Fr(r){for(var t={},e=s(r),o=0,f=e.length;o<f;o++)t[r[e[o]]]=e[o];return t}var Io=i(()=>{k()});function cr(r){var t=[];for(var e in r)h(r[e])&&t.push(e);return t.sort()}var ko=i(()=>{z()});function dr(r,t){return function(e){var o=arguments.length;if(t&&(e=Object(e)),o<2||e==null)return e;for(var f=1;f<o;f++)for(var a=arguments[f],n=r(a),u=n.length,l=0;l<u;l++){var m=n[l];(!t||e[m]===void 0)&&(e[m]=a[m])}return e}}var Xt=i(()=>{});var ut,Eo=i(()=>{Xt();Pr();ut=dr(b)});var er,Gt=i(()=>{Xt();k();er=dr(s)});var lt,So=i(()=>{Xt();Pr();lt=dr(b,!0)});function Vn(){return function(){}}function mt(r){if(!T(r))return{};if(Ye)return Ye(r);var t=Vn();t.prototype=r;var e=new t;return t.prototype=null,e}var Co=i(()=>{j();_()});function $t(r,t){var e=mt(r);return t&&er(e,t),e}var ua=i(()=>{Co();Gt()});function Yt(r){return T(r)?O(r)?r.slice():ut({},r):r}var la=i(()=>{j();tr();Eo()});function Jt(r,t){return t(r),r}var ma=i(()=>{});function pt(r){return O(r)?r:[r]}var To=i(()=>{F();tr();p.toPath=pt});function W(r){return p.toPath(r)}var Lr=i(()=>{F();To()});function vr(r,t){for(var e=t.length,o=0;o<e;o++){if(r==null)return;r=r[t[o]]}return e?r:void 0}var Ht=i(()=>{});function Nr(r,t,e){var o=vr(r,W(t));return Er(o)?e:o}var Bo=i(()=>{Lr();Ht();Qe()});function Qt(r,t){t=W(t);for(var e=t.length,o=0;o<e;o++){var f=t[o];if(!C(r,f))return!1;r=r[f]}return!!e}var pa=i(()=>{Y();Lr()});function or(r){return r}var jt=i(()=>{});function U(r){return r=er({},r),function(t){return Mr(t,r)}}var st=i(()=>{Gt();vo()});function fr(r){return r=W(r),function(t){return vr(t,r)}}var re=i(()=>{Ht();Lr()});function Z(r,t,e){if(t===void 0)return r;switch(e??3){case 1:return function(o){return r.call(t,o)};case 3:return function(o,f,a){return r.call(t,o,f,a)};case 4:return function(o,f,a,n){return r.call(t,o,f,a,n)}}return function(){return r.apply(t,arguments)}}var zr=i(()=>{});function ct(r,t,e){return r==null?or:h(r)?Z(r,t,e):T(r)&&!O(r)?U(r):fr(r)}var Oo=i(()=>{jt();z();j();tr();st();re();zr()});function hr(r,t){return ct(r,t,1/0)}var Mo=i(()=>{F();Oo();p.iteratee=hr});function v(r,t,e){return p.iteratee!==hr?p.iteratee(r,t):ct(r,t,e)}var M=i(()=>{F();Oo();Mo()});function te(r,t,e){t=v(t,e);for(var o=s(r),f=o.length,a={},n=0;n<f;n++){var u=o[n];a[u]=t(r[u],u,r)}return a}var sa=i(()=>{M();k()});function Rr(){}var Po=i(()=>{});function ee(r){return r==null?Rr:function(t){return Nr(r,t)}}var ca=i(()=>{Po();Bo()});function oe(r,t,e){var o=Array(Math.max(0,r));t=Z(t,e,1);for(var f=0;f<r;f++)o[f]=t(f);return o}var da=i(()=>{zr()});function gr(r,t){return t==null&&(t=r,r=0),r+Math.floor(Math.random()*(t-r+1))}var Do=i(()=>{});var J,fe=i(()=>{J=Date.now||function(){return new Date().getTime()}});function dt(r){var t=function(a){return r[a]},e="(?:"+s(r).join("|")+")",o=RegExp(e),f=RegExp(e,"g");return function(a){return a=a==null?"":""+a,o.test(a)?a.replace(f,t):a}}var Fo=i(()=>{k()});var ae,Lo=i(()=>{ae={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#x27;","`":"&#x60;"}});var No,va=i(()=>{Fo();Lo();No=dt(ae)});var ha,ga=i(()=>{Io();Lo();ha=Fr(ae)});var zo,xa=i(()=>{Fo();ga();zo=dt(ha)});var Ro,Vo=i(()=>{F();Ro=p.templateSettings={evaluate:/<%([\s\S]+?)%>/g,interpolate:/<%=([\s\S]+?)%>/g,escape:/<%-([\s\S]+?)%>/g}});function Wn(r){return"\\"+qn[r]}function ne(r,t,e){!t&&e&&(t=e),t=lt({},t,p.templateSettings);var o=RegExp([(t.escape||qo).source,(t.interpolate||qo).source,(t.evaluate||qo).source].join("|")+"|$","g"),f=0,a="__p+='";r.replace(o,function(m,A,I,x,Hr){return a+=r.slice(f,Hr).replace(bn,Wn),f=Hr+m.length,A?a+=`'+
+((__t=(`+A+`))==null?'':_.escape(__t))+
+'`:I?a+=`'+
+((__t=(`+I+`))==null?'':__t)+
+'`:x&&(a+=`';
+`+x+`
+__p+='`),m}),a+=`';
+`;var n=t.variable;if(n){if(!Un.test(n))throw new Error("variable is not a bare identifier: "+n)}else a=`with(obj||{}){
+`+a+`}
+`,n="obj";a=`var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
+`+a+`return __p;
+`;var u;try{u=new Function(n,"_",a)}catch(m){throw m.source=a,m}var l=function(m){return u.call(this,m,p)};return l.source="function("+n+`){
+`+a+"}",l}var qo,qn,bn,Un,ya=i(()=>{So();F();Vo();qo=/(.)^/,qn={"'":"'","\\":"\\","\r":"r","\n":"n","\u2028":"u2028","\u2029":"u2029"},bn=/\\|'|\r|\n|\u2028|\u2029/g;Un=/^\s*(\w|\$)+\s*$/});function ie(r,t,e){t=W(t);var o=t.length;if(!o)return h(e)?e.call(r):e;for(var f=0;f<o;f++){var a=r?.[t[f]];a===void 0&&(a=e,f=o),r=h(a)?a.call(r):a}return r}var Aa=i(()=>{z();Lr()});function ue(r){var t=++Zn+"";return r?r+t:t}var Zn,_a=i(()=>{Zn=0});function le(r){var t=p(r);return t._chain=!0,t}var wa=i(()=>{F()});function vt(r,t,e,o,f){if(!(o instanceof t))return r.apply(e,f);var a=mt(r.prototype),n=r.apply(a,f);return T(n)?n:a}var bo=i(()=>{Co();j()});var Wo,H,ht=i(()=>{D();bo();F();Wo=d(function(r,t){var e=Wo.placeholder,o=function(){for(var f=0,a=t.length,n=Array(a),u=0;u<a;u++)n[u]=t[u]===e?arguments[f++]:t[u];for(;f<arguments.length;)n.push(arguments[f++]);return vt(r,o,this,this,n)};return o});Wo.placeholder=p;H=Wo});var gt,Uo=i(()=>{D();z();bo();gt=d(function(r,t,e){if(!h(r))throw new TypeError("Bind must be called on a function");var o=d(function(f){return vt(r,o,t,this,e.concat(f))});return o})});var y,N=i(()=>{mo();R();y=ft(g)});function V(r,t,e){!t&&t!==0&&(t=1/0);for(var o=[],f=0,a=0,n=g(r)||0,u=[];;){if(a>=n){if(!u.length)break;var l=u.pop();a=l.i,r=l.v,n=g(r);continue}var m=r[a++];u.length>=t?o[f++]=m:y(m)&&(O(m)||mr(m))?(u.push({i:a,v:r}),a=0,r=m,n=g(r)):e||(o[f++]=m)}return o}var xr=i(()=>{R();N();tr();Rt()});var Zo,Ia=i(()=>{D();xr();Uo();Zo=d(function(r,t){t=V(t,!1,!1);var e=t.length;if(e<1)throw new Error("bindAll must be passed function names");for(;e--;){var o=t[e];r[o]=gt(r[o],r)}return r})});function me(r,t){var e=function(o){var f=e.cache,a=""+(t?t.apply(this,arguments):o);return C(f,a)||(f[a]=r.apply(this,arguments)),f[a]};return e.cache={},e}var ka=i(()=>{Y()});var xt,Ko=i(()=>{D();xt=d(function(r,t,e){return setTimeout(function(){return r.apply(null,e)},t)})});var Xo,Ea=i(()=>{ht();Ko();F();Xo=H(xt,p,1)});function pe(r,t,e){var o,f,a,n,u=0;e||(e={});var l=function(){u=e.leading===!1?0:J(),o=null,n=r.apply(f,a),o||(f=a=null)},m=function(){var A=J();!u&&e.leading===!1&&(u=A);var I=t-(A-u);return f=this,a=arguments,I<=0||I>t?(o&&(clearTimeout(o),o=null),u=A,n=r.apply(f,a),o||(f=a=null)):!o&&e.trailing!==!1&&(o=setTimeout(l,I)),n};return m.cancel=function(){clearTimeout(o),u=0,o=f=a=null},m}var Sa=i(()=>{fe()});function se(r,t,e){var o,f,a,n,u,l=function(){var A=J()-f;t>A?o=setTimeout(l,t-A):(o=null,e||(n=r.apply(u,a)),o||(a=u=null))},m=d(function(A){return u=this,a=A,f=J(),o||(o=setTimeout(l,t),e&&(n=r.apply(u,a))),n});return m.cancel=function(){clearTimeout(o),o=a=u=null},m}var Ca=i(()=>{D();fe()});function ce(r,t){return H(t,r)}var Ta=i(()=>{ht()});function ar(r){return function(){return!r.apply(this,arguments)}}var de=i(()=>{});function ve(){var r=arguments,t=r.length-1;return function(){for(var e=t,o=r[t].apply(this,arguments);e--;)o=r[e].call(this,o);return o}}var Ba=i(()=>{});function he(r,t){return function(){if(--r<1)return t.apply(this,arguments)}}var Oa=i(()=>{});function Vr(r,t){var e;return function(){return--r>0&&(e=t.apply(this,arguments)),r<=1&&(t=null),e}}var Go=i(()=>{});var $o,Ma=i(()=>{ht();Go();$o=H(Vr,2)});function qr(r,t,e){t=v(t,e);for(var o=s(r),f,a=0,n=o.length;a<n;a++)if(f=o[a],t(r[f],f,r))return f}var Yo=i(()=>{M();k()});function yt(r){return function(t,e,o){e=v(e,o);for(var f=g(t),a=r>0?0:f-1;a>=0&&a<f;a+=r)if(e(t[a],a,t))return a;return-1}}var Jo=i(()=>{M();R()});var yr,ge=i(()=>{Jo();yr=yt(1)});var At,Ho=i(()=>{Jo();At=yt(-1)});function br(r,t,e,o){e=v(e,o,1);for(var f=e(t),a=0,n=g(r);a<n;){var u=Math.floor((a+n)/2);e(r[u])<f?a=u+1:n=u}return a}var Qo=i(()=>{M();R()});function _t(r,t,e){return function(o,f,a){var n=0,u=g(o);if(typeof a=="number")r>0?n=a>=0?a:Math.max(a+u,n):u=a>=0?Math.min(a+1,u):a+u+1;else if(e&&a&&u)return a=e(o,f),o[a]===f?a:-1;if(f!==f)return a=t(X.call(o,n,u),Br),a>=0?a+n:-1;for(a=r>0?n:u-1;a>=0&&a<u;a+=r)if(o[a]===f)return a;return-1}}var jo=i(()=>{R();_();uo()});var wt,rf=i(()=>{Qo();ge();jo();wt=_t(1,yr,br)});var tf,Pa=i(()=>{Ho();jo();tf=_t(-1,At)});function Ar(r,t,e){var o=y(r)?yr:qr,f=o(r,t,e);if(f!==void 0&&f!==-1)return r[f]}var ef=i(()=>{N();ge();Yo()});function xe(r,t){return Ar(r,U(t))}var Da=i(()=>{ef();st()});function E(r,t,e){t=Z(t,e);var o,f;if(y(r))for(o=0,f=r.length;o<f;o++)t(r[o],o,r);else{var a=s(r);for(o=0,f=a.length;o<f;o++)t(r[a[o]],a[o],r)}return r}var nr=i(()=>{zr();N();k()});function P(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=Array(f),n=0;n<f;n++){var u=o?o[n]:n;a[n]=t(r[u],u,r)}return a}var _r=i(()=>{M();N();k()});function It(r){var t=function(e,o,f,a){var n=!y(e)&&s(e),u=(n||e).length,l=r>0?0:u-1;for(a||(f=e[n?n[l]:l],l+=r);l>=0&&l<u;l+=r){var m=n?n[l]:l;f=o(f,e[m],m,e)}return f};return function(e,o,f,a){var n=arguments.length>=3;return t(e,Z(o,a,4),f,n)}}var of=i(()=>{N();k();zr()});var kt,Fa=i(()=>{of();kt=It(1)});var ye,La=i(()=>{of();ye=It(-1)});function q(r,t,e){var o=[];return t=v(t,e),E(r,function(f,a,n){t(f,a,n)&&o.push(f)}),o}var Wr=i(()=>{M();nr()});function Ae(r,t,e){return q(r,ar(v(t)),e)}var Na=i(()=>{Wr();de();M()});function Et(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=0;a<f;a++){var n=o?o[a]:a;if(!t(r[n],n,r))return!1}return!0}var za=i(()=>{M();N();k()});function St(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=0;a<f;a++){var n=o?o[a]:a;if(t(r[n],n,r))return!0}return!1}var Ra=i(()=>{M();N();k()});function B(r,t,e,o){return y(r)||(r=L(r)),(typeof e!="number"||o)&&(e=0),wt(r,t,e)>=0}var Ur=i(()=>{N();sr();rf()});var ff,Va=i(()=>{D();z();_r();Ht();Lr();ff=d(function(r,t,e){var o,f;return h(t)?f=t:(t=W(t),o=t.slice(0,-1),t=t[t.length-1]),P(r,function(a){var n=f;if(!n){if(o&&o.length&&(a=vr(a,o)),a==null)return;n=a[t]}return n==null?n:n.apply(a,e)})})});function ir(r,t){return P(r,fr(t))}var _e=i(()=>{_r();re()});function we(r,t){return q(r,U(t))}var qa=i(()=>{Wr();st()});function Zr(r,t,e){var o=-1/0,f=-1/0,a,n;if(t==null||typeof t=="number"&&typeof r[0]!="object"&&r!=null){r=y(r)?r:L(r);for(var u=0,l=r.length;u<l;u++)a=r[u],a!=null&&a>o&&(o=a)}else t=v(t,e),E(r,function(m,A,I){n=t(m,A,I),(n>f||n===-1/0&&o===-1/0)&&(o=m,f=n)});return o}var af=i(()=>{N();sr();M();nr()});function Ie(r,t,e){var o=1/0,f=1/0,a,n;if(t==null||typeof t=="number"&&typeof r[0]!="object"&&r!=null){r=y(r)?r:L(r);for(var u=0,l=r.length;u<l;u++)a=r[u],a!=null&&a<o&&(o=a)}else t=v(t,e),E(r,function(m,A,I){n=t(m,A,I),(n<f||n===1/0&&o===1/0)&&(o=m,f=n)});return o}var ba=i(()=>{N();sr();M();nr()});function Kr(r){return r?O(r)?X.call(r):lr(r)?r.match(Kn):y(r)?P(r,or):L(r):[]}var Kn,nf=i(()=>{tr();_();Lt();N();_r();jt();sr();Kn=/[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g});function Xr(r,t,e){if(t==null||e)return y(r)||(r=L(r)),r[gr(r.length-1)];var o=Kr(r),f=g(o);t=Math.max(Math.min(t,f),0);for(var a=f-1,n=0;n<t;n++){var u=gr(n,a),l=o[n];o[n]=o[u],o[u]=l}return o.slice(0,t)}var uf=i(()=>{N();sr();R();Do();nf()});function ke(r){return Xr(r,1/0)}var Wa=i(()=>{uf()});function Ee(r,t,e){var o=0;return t=v(t,e),ir(P(r,function(f,a,n){return{value:f,index:o++,criteria:t(f,a,n)}}).sort(function(f,a){var n=f.criteria,u=a.criteria;if(n!==u){if(n>u||n===void 0)return 1;if(n<u||u===void 0)return-1}return f.index-a.index}),"value")}var Ua=i(()=>{M();_e();_r()});function Q(r,t){return function(e,o,f){var a=t?[[],[]]:{};return o=v(o,f),E(e,function(n,u){var l=o(n,u,e);r(a,n,l)}),a}}var Ct=i(()=>{M();nr()});var lf,Za=i(()=>{Ct();Y();lf=Q(function(r,t,e){C(r,e)?r[e].push(t):r[e]=[t]})});var mf,Ka=i(()=>{Ct();mf=Q(function(r,t,e){r[e]=t})});var pf,Xa=i(()=>{Ct();Y();pf=Q(function(r,t,e){C(r,e)?r[e]++:r[e]=1})});var sf,Ga=i(()=>{Ct();sf=Q(function(r,t,e){r[e?0:1].push(t)},!0)});function Se(r){return r==null?0:y(r)?r.length:s(r).length}var $a=i(()=>{N();k()});function cf(r,t,e){return t in e}var Ya=i(()=>{});var Tt,df=i(()=>{D();z();zr();Pr();Ya();xr();Tt=d(function(r,t){var e={},o=t[0];if(r==null)return e;h(o)?(t.length>1&&(o=Z(o,t[1])),t=b(r)):(o=cf,t=V(t,!1,!1),r=Object(r));for(var f=0,a=t.length;f<a;f++){var n=t[f],u=r[n];o(u,n,r)&&(e[n]=u)}return e})});var vf,Ja=i(()=>{D();z();de();_r();xr();Ur();df();vf=d(function(r,t){var e=t[0],o;return h(e)?(e=ar(e),t.length>1&&(o=t[1])):(t=P(V(t,!1,!1),String),e=function(f,a){return!B(t,a)}),Tt(r,e,o)})});function Gr(r,t,e){return X.call(r,0,Math.max(0,r.length-(t==null||e?1:t)))}var hf=i(()=>{_()});function $r(r,t,e){return r==null||r.length<1?t==null||e?void 0:[]:t==null||e?r[0]:Gr(r,r.length-t)}var Ha=i(()=>{hf()});function ur(r,t,e){return X.call(r,t==null||e?1:t)}var gf=i(()=>{_()});function Ce(r,t,e){return r==null||r.length<1?t==null||e?void 0:[]:t==null||e?r[r.length-1]:ur(r,Math.max(0,r.length-t))}var Qa=i(()=>{gf()});function Te(r){return q(r,Boolean)}var ja=i(()=>{Wr()});function Be(r,t){return V(r,t,!1)}var rn=i(()=>{xr()});var Bt,xf=i(()=>{D();xr();Wr();Ur();Bt=d(function(r,t){return t=V(t,!0,!0),q(r,function(e){return!B(t,e)})})});var yf,tn=i(()=>{D();xf();yf=d(function(r,t){return Bt(r,t)})});function wr(r,t,e,o){Sr(t)||(o=e,e=t,t=!1),e!=null&&(e=v(e,o));for(var f=[],a=[],n=0,u=g(r);n<u;n++){var l=r[n],m=e?e(l,n,r):l;t&&!e?((!n||a!==m)&&f.push(l),a=m):e?B(a,m)||(a.push(m),f.push(l)):B(f,l)||f.push(l)}return f}var Af=i(()=>{je();M();R();Ur()});var _f,en=i(()=>{D();Af();xr();_f=d(function(r){return wr(V(r,!0,!0))})});function Oe(r){for(var t=[],e=arguments.length,o=0,f=g(r);o<f;o++){var a=r[o];if(!B(t,a)){var n;for(n=1;n<e&&B(arguments[n],a);n++);n===e&&t.push(a)}}return t}var on=i(()=>{R();Ur()});function Ir(r){for(var t=r&&Zr(r,g).length||0,e=Array(t),o=0;o<t;o++)e[o]=ir(r,o);return e}var wf=i(()=>{af();R();_e()});var If,fn=i(()=>{D();wf();If=d(Ir)});function Me(r,t){for(var e={},o=0,f=g(r);o<f;o++)t?e[r[o]]=t[o]:e[r[o][0]]=r[o][1];return e}var an=i(()=>{R()});function Pe(r,t,e){t==null&&(t=r||0,r=0),e||(e=t<r?-1:1);for(var o=Math.max(Math.ceil((t-r)/e),0),f=Array(o),a=0;a<o;a++,r+=e)f[a]=r;return f}var nn=i(()=>{});function De(r,t){if(t==null||t<1)return[];for(var e=[],o=0,f=r.length;o<f;)e.push(X.call(r,o,o+=t));return e}var un=i(()=>{_()});function Yr(r,t){return r._chain?p(t).chain():t}var kf=i(()=>{F()});function Jr(r){return E(cr(r),function(t){var e=p[t]=r[t];p.prototype[t]=function(){var o=[this._wrapped];return Pf.apply(o,arguments),Yr(this,e.apply(p,o))}}),p}var ln=i(()=>{F();nr();ko();_();kf()});var mn,pn=i(()=>{F();nr();_();kf();E(["pop","push","reverse","shift","sort","splice","unshift"],function(r){var t=rt[r];p.prototype[r]=function(){var e=this._wrapped;return e!=null&&(t.apply(e,arguments),(r==="shift"||r==="splice")&&e.length===0&&delete e[0]),Yr(this,e)}});E(["concat","join","slice"],function(r){var t=rt[r];p.prototype[r]=function(){var e=this._wrapped;return e!=null&&(e=t.apply(e,arguments)),Yr(this,e)}});mn=p});var Ef={};Mf(Ef,{VERSION:()=>jr,after:()=>he,all:()=>Et,allKeys:()=>b,any:()=>St,assign:()=>er,before:()=>Vr,bind:()=>gt,bindAll:()=>Zo,chain:()=>le,chunk:()=>De,clone:()=>Yt,collect:()=>P,compact:()=>Te,compose:()=>ve,constant:()=>Or,contains:()=>B,countBy:()=>pf,create:()=>$t,debounce:()=>se,default:()=>mn,defaults:()=>lt,defer:()=>Xo,delay:()=>xt,detect:()=>Ar,difference:()=>Bt,drop:()=>ur,each:()=>E,escape:()=>No,every:()=>Et,extend:()=>ut,extendOwn:()=>er,filter:()=>q,find:()=>Ar,findIndex:()=>yr,findKey:()=>qr,findLastIndex:()=>At,findWhere:()=>xe,first:()=>$r,flatten:()=>Be,foldl:()=>kt,foldr:()=>ye,forEach:()=>E,functions:()=>cr,get:()=>Nr,groupBy:()=>lf,has:()=>Qt,head:()=>$r,identity:()=>or,include:()=>B,includes:()=>B,indexBy:()=>mf,indexOf:()=>wt,initial:()=>Gr,inject:()=>kt,intersection:()=>Oe,invert:()=>Fr,invoke:()=>ff,isArguments:()=>mr,isArray:()=>O,isArrayBuffer:()=>ot,isBoolean:()=>Sr,isDataView:()=>rr,isDate:()=>to,isElement:()=>Ft,isEmpty:()=>bt,isEqual:()=>Ut,isError:()=>oo,isFinite:()=>Vt,isFunction:()=>h,isMap:()=>yo,isMatch:()=>Mr,isNaN:()=>Br,isNull:()=>Dt,isNumber:()=>tt,isObject:()=>T,isRegExp:()=>eo,isSet:()=>_o,isString:()=>lr,isSymbol:()=>et,isTypedArray:()=>nt,isUndefined:()=>Er,isWeakMap:()=>Ao,isWeakSet:()=>wo,iteratee:()=>hr,keys:()=>s,last:()=>Ce,lastIndexOf:()=>tf,map:()=>P,mapObject:()=>te,matcher:()=>U,matches:()=>U,max:()=>Zr,memoize:()=>me,methods:()=>cr,min:()=>Ie,mixin:()=>Jr,negate:()=>ar,noop:()=>Rr,now:()=>J,object:()=>Me,omit:()=>vf,once:()=>$o,pairs:()=>Kt,partial:()=>H,partition:()=>sf,pick:()=>Tt,pluck:()=>ir,property:()=>fr,propertyOf:()=>ee,random:()=>gr,range:()=>Pe,reduce:()=>kt,reduceRight:()=>ye,reject:()=>Ae,rest:()=>ur,restArguments:()=>d,result:()=>ie,sample:()=>Xr,select:()=>q,shuffle:()=>ke,size:()=>Se,some:()=>St,sortBy:()=>Ee,sortedIndex:()=>br,tail:()=>ur,take:()=>$r,tap:()=>Jt,template:()=>ne,templateSettings:()=>Ro,throttle:()=>pe,times:()=>oe,toArray:()=>Kr,toPath:()=>pt,transpose:()=>Ir,unescape:()=>zo,union:()=>_f,uniq:()=>wr,unique:()=>wr,uniqueId:()=>ue,unzip:()=>Ir,values:()=>L,where:()=>we,without:()=>yf,wrap:()=>ce,zip:()=>If});var Fe=i(()=>{_();D();j();Vf();Qe();je();qf();Lt();ro();bf();Wf();Uf();fo();ao();zt();tr();z();Rt();Xf();uo();so();Yf();vo();Qf();oa();fa();aa();na();k();Pr();sr();ia();Io();ko();Eo();Gt();So();ua();la();ma();Bo();pa();sa();jt();lo();Po();To();re();ca();st();da();Do();fe();va();xa();Vo();ya();Aa();_a();wa();Mo();ht();Uo();Ia();ka();Ko();Ea();Sa();Ca();Ta();de();Ba();Oa();Go();Ma();Yo();ge();Ho();Qo();rf();Pa();ef();Da();nr();_r();Fa();La();Wr();Na();za();Ra();Ur();Va();_e();qa();af();ba();Wa();uf();Ua();Za();Ka();Xa();Ga();nf();$a();df();Ja();Ha();hf();Qa();gf();ja();rn();tn();Af();en();on();xf();wf();fn();an();nn();un();ln();pn()});var Sf,sn,cn=i(()=>{Fe();Fe();Sf=Jr(Ef);Sf._=Sf;sn=Sf});var Le={};Mf(Le,{VERSION:()=>jr,after:()=>he,all:()=>Et,allKeys:()=>b,any:()=>St,assign:()=>er,before:()=>Vr,bind:()=>gt,bindAll:()=>Zo,chain:()=>le,chunk:()=>De,clone:()=>Yt,collect:()=>P,compact:()=>Te,compose:()=>ve,constant:()=>Or,contains:()=>B,countBy:()=>pf,create:()=>$t,debounce:()=>se,default:()=>sn,defaults:()=>lt,defer:()=>Xo,delay:()=>xt,detect:()=>Ar,difference:()=>Bt,drop:()=>ur,each:()=>E,escape:()=>No,every:()=>Et,extend:()=>ut,extendOwn:()=>er,filter:()=>q,find:()=>Ar,findIndex:()=>yr,findKey:()=>qr,findLastIndex:()=>At,findWhere:()=>xe,first:()=>$r,flatten:()=>Be,foldl:()=>kt,foldr:()=>ye,forEach:()=>E,functions:()=>cr,get:()=>Nr,groupBy:()=>lf,has:()=>Qt,head:()=>$r,identity:()=>or,include:()=>B,includes:()=>B,indexBy:()=>mf,indexOf:()=>wt,initial:()=>Gr,inject:()=>kt,intersection:()=>Oe,invert:()=>Fr,invoke:()=>ff,isArguments:()=>mr,isArray:()=>O,isArrayBuffer:()=>ot,isBoolean:()=>Sr,isDataView:()=>rr,isDate:()=>to,isElement:()=>Ft,isEmpty:()=>bt,isEqual:()=>Ut,isError:()=>oo,isFinite:()=>Vt,isFunction:()=>h,isMap:()=>yo,isMatch:()=>Mr,isNaN:()=>Br,isNull:()=>Dt,isNumber:()=>tt,isObject:()=>T,isRegExp:()=>eo,isSet:()=>_o,isString:()=>lr,isSymbol:()=>et,isTypedArray:()=>nt,isUndefined:()=>Er,isWeakMap:()=>Ao,isWeakSet:()=>wo,iteratee:()=>hr,keys:()=>s,last:()=>Ce,lastIndexOf:()=>tf,map:()=>P,mapObject:()=>te,matcher:()=>U,matches:()=>U,max:()=>Zr,memoize:()=>me,methods:()=>cr,min:()=>Ie,mixin:()=>Jr,negate:()=>ar,noop:()=>Rr,now:()=>J,object:()=>Me,omit:()=>vf,once:()=>$o,pairs:()=>Kt,partial:()=>H,partition:()=>sf,pick:()=>Tt,pluck:()=>ir,property:()=>fr,propertyOf:()=>ee,random:()=>gr,range:()=>Pe,reduce:()=>kt,reduceRight:()=>ye,reject:()=>Ae,rest:()=>ur,restArguments:()=>d,result:()=>ie,sample:()=>Xr,select:()=>q,shuffle:()=>ke,size:()=>Se,some:()=>St,sortBy:()=>Ee,sortedIndex:()=>br,tail:()=>ur,take:()=>$r,tap:()=>Jt,template:()=>ne,templateSettings:()=>Ro,throttle:()=>pe,times:()=>oe,toArray:()=>Kr,toPath:()=>pt,transpose:()=>Ir,unescape:()=>zo,union:()=>_f,uniq:()=>wr,unique:()=>wr,uniqueId:()=>ue,unzip:()=>Ir,values:()=>L,where:()=>we,without:()=>yf,wrap:()=>ce,zip:()=>If});var Ne=i(()=>{cn();Fe()});var vn=Qr((pg,dn)=>{"use strict";dn.exports={asc_char:[4,0,2,6,3,5,1,9,8,7,1,2,0,6,4,8,2,9,5,3,0,1,3,7,4,6,8,9,2,0,5,1,9,4,3,8,6,7,1,2,4,3,9,5,7,8,3,0,2,1,4,0,9,1,7,0,2,4,6,3,7,1,9,5,8],asc_bit:[8,1,256,2048,2,4096,256,2048,1024,64,16,4096,4,128,512,64,128,512,4,256,16,1,4096,128,1024,512,1,128,1024,32,128,512,64,256,4,4096,2,16,4,1,2,32,16,64,4096,2,1,512,16,128,32,1024,4,64,512,2048,4,4096,64,128,32,2048,1,8,4],desc_char:[7,1,9,5,8,0,2,4,6,3,5,8,9,7,3,0,6,1,7,4,6,8,9,2,5,1,7,5,4,3,8,7,6,0,2,5,4,9,3,0,1,6,8,2,0,4,5,9,6,7,5,2,6,3,8,5,1,9,8,7,4,0,2,6,3],desc_bit:[4,1024,4096,32,512,2,32,16,8,512,2048,32,1024,2,64,8,16,2,1024,1,4,2048,256,64,2,4096,8,256,64,16,16,2048,1,64,2,512,2048,32,8,128,8,1024,128,2048,256,4,1024,8,32,256,1,8,4096,2048,256,16,32,2,8,1,128,4096,512,256,1024]}});var Bf=Qr((cg,hn)=>{"use strict";var sg=(Ne(),Ze(Le)),Ve=vn(),ze=Ve.asc_bit,Re=Ve.asc_char,Cf=Ve.desc_bit,Tf=Ve.desc_char,w={encode_table:new Array(1365),decode_table:new Array(8192),fcs_table:new Array(8192),buildCodeWords:function(t,e,o){for(var f=0;f<8192;f++){for(var a=0,n=0,u=f,l=0;l<13;l++)a+=u&1,n=n<<1|u&1,u>>=1;a===t&&(f===n?(w.encode_table[o]=f,w.decode_table[f]=o,w.decode_table[f^8191]=o,w.fcs_table[f]=0,w.fcs_table[f^8191]=1,o--):f<n&&(w.encode_table[e]=f,w.decode_table[f]=e,w.decode_table[f^8191]=e,w.fcs_table[f]=0,w.fcs_table[f^8191]=1,e++,w.encode_table[e]=n,w.decode_table[n]=e,w.decode_table[n^8191]=e,w.fcs_table[n]=0,w.fcs_table[n^8191]=1,e++))}},cleanString:function(t){return t==null&&(t=""),t.toUpperCase().replace(/\s/g,"")},isZero:function(t){for(var e=t.length-1;e>=0;e--)if(t[e]!==0)return!1;return!0},add:function(r,t){for(var e=r.length-1;e>=0&&t!==0;e--){var o=r[e]+t;t=o>>11,r[e]=o&2047}},multiplyAndAdd:function(t,e,o){for(var f=t.length-1;f>=0;f--){var a=t[f]*e+o;o=a>>11,t[f]=a&2047}},divideModulus:function(t,e){for(var o=0,f=t.length,a,n=0;n<f;n++){var u=t[n]+(o<<11);t[n]=a=Math.floor(u/e),o=u-a*e}return o},calculateFrameCheck:function(t){for(var e=496,o=t.length,f=0;f<o;f++){e^=t[f];for(var a=0;a<11;a++)e<<=1,e&2048&&(e^=3893)}return e},charactersToText:function(t){for(var e="",o=0;o<65;o++)t[Tf[o]]&Cf[o]?t[Re[o]]&ze[o]?e+="F":e+="D":t[Re[o]]&ze[o]?e+="A":e+="T";return e},textToCharacters:function(t,e){t=w.cleanString(t);var o=[0,0,0,0,0,0,0,0,0,0],f;for(f=0;f<65;f++)switch(t.charAt(f)){case"T":case"S":break;case"D":o[Tf[f]]|=Cf[f];break;case"A":o[Re[f]]|=ze[f];break;case"F":o[Tf[f]]|=Cf[f],o[Re[f]]|=ze[f];break;default:if(e)return null}return o},showBarCode:function(t){var e=document.getElementById("row0").cells,o=document.getElementById("row1").cells,f=document.getElementById("row2").cells,a=t.length;a>65&&(a=65);for(var n=0;n<a;n++){var u=2*n;switch(t.charAt(n)){case"A":e[u].style.backgroundColor="#000",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="transparent";break;case"D":e[u].style.backgroundColor="transparent",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="#000";break;case"F":e[u].style.backgroundColor="#000",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="#000";break;case"T":case"S":e[u].style.backgroundColor="transparent",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="transparent";break;default:e[u].style.backgroundColor="#f00",o[u].style.backgroundColor="#f00",f[u].style.backgroundColor="#f00";break}}for(var l=a;l<65;l++){var m=2*l;e[m].style.backgroundColor="transparent",o[m].style.backgroundColor="#ccc",f[m].style.backgroundColor="transparent"}return t.length}};w.buildCodeWords(5,0,1286);w.buildCodeWords(2,1287,1364);hn.exports=w});var yn=Qr((dg,xn)=>{"use strict";var Xn=(Ne(),Ze(Le)),kr=Bf(),Gn=kr.encode_table,$n=kr.add,gn=kr.divideModulus,K=kr.multiplyAndAdd,Yn=kr.charactersToText,Jn=kr.calculateFrameCheck,Hn=kr.cleanString;xn.exports=function(t,e){var o=Qn(t);if(o){if(console.error("Encode Error",o),e)return e(o);throw new Error(o)}return jn(t,e)};function Qn(r,t){if(Xn.mapObject(r,Hn),r.zip){if(!e(r.zip,5))return"Zip code must be 5 digits"}else r.zip="";if(r.plus4){if(r.zip==="")return"Zip code is required if Zip Code plus4 is provided";if(!e(r.plus4,4))return"plus4 must be 4 digits"}else r.plus4="";if(r.delivery_pt){if(!e(r.delivery_pt,2))return"Delivery Point must be 2 digits"}else r.delivery_pt="";if(!e(r.barcode_id,2))return"Barcode ID must be 2 digits";if(r.barcode_id.charAt(1)>="5")return"Second digit of Barcode ID must be 0-4";if(!e(r.service_type,3))return"Service Type must be 3 digits";if(!e(r.mailer_id,6,9))return"Mailer ID must be 6 or 9 digits";if(!e(r.serial_num)||r.mailer_id.length+r.serial_num.length!==15)return"Mailer ID and Serial Number together must be 15 digits";function e(o,f,a){return/\D/.test(o)?!1:!f||o.length===f||o.length===a}return null}function jn(r,t){var e,o=[0,0,0,0,0,0,0,0,0,0],f=0;r.zip!==""&&(o[9]=parseInt(r.zip,10),f+=1),r.plus4!==""&&(K(o,1e4,parseInt(r.plus4,10)),f+=1e5),r.delivery_pt!==""&&(K(o,100,parseInt(r.delivery_pt,10)),f+=1e9),$n(o,f),K(o,10,parseInt(r.barcode_id.charAt(0),10)),K(o,5,parseInt(r.barcode_id.charAt(1),10)),K(o,1e3,parseInt(r.service_type,10)),r.mailer_id.length===6?(K(o,1e6,parseInt(r.mailer_id,10)),K(o,1e5,0),K(o,1e4,parseInt(r.serial_num,10))):(K(o,1e4,0),K(o,1e5,parseInt(r.mailer_id,10)),K(o,1e6,parseInt(r.serial_num,10)));var a=Jn(o),n=new Array(10);for(n[9]=gn(o,636)<<1,e=8;e>0;e--)n[e]=gn(o,1365);n[0]=o[8]<<11|o[9],a&1024&&(n[0]+=659);var u=new Array(10);for(e=0;e<10;e++)u[e]=Gn[n[e]],a&1<<e&&(u[e]^=8191);var l=Yn(u);return t?t(null,l):l}});var Cn=Qr((vg,Sn)=>{"use strict";var ri=(Ne(),Ze(Le)),G=Bf(),We=G.decode_table,ti=G.fcs_table,An=G.isZero,ei=G.add,qe=G.divideModulus,_n=G.multiplyAndAdd,oi=G.charactersToText,be=G.textToCharacters,fi=G.calculateFrameCheck,ai=G.cleanString;Sn.exports=function(t,e){if(e)return wn(t,e);var o=wn(t);return e?e(null,o):o};function wn(r,t){var e,o;if(r=ai(r),r.length===65&&(e=be(r,!0),e&&(o=kn(e),o)))return t?t(null,o):o;if(r=ii(r),r.length!==65){if(t)return t("Barcode must be 65 characters long");throw new Error("Barcode must be 65 characters long")}if(e=be(r,!1),o=In(e),o)return o.suggest&&(o.highlight=ui(r,o.suggest)),o;if(r=ni(r),e=be(r,!1),o=In(e),o&&o.barcode_id){if(t)return t("Barcode seems to be upside down");throw new Error("Barcode seems to be upside down")}if(t)return t("Invalid barcode");throw new Error("Invalid barcode")}function kn(r){for(var t=0,e=new Array(10),o=0;o<10;o++){if(e[o]=We[r[o]],e[o]===void 0)return null;t|=ti[r[o]]<<o}if(!(e[0]>1317||e[9]>1270)){if(e[9]&1)return null;e[9]>>=1,e[0]>658&&(e[0]-=659,t|=1024);for(var f=[0,0,0,0,0,0,0,0,0,e[0]],a=1;a<9;a++)_n(f,1365,e[a]);if(_n(f,636,e[9]),fi(f)!==t)return null;for(var n=new Array(20),u=19;u>=2;u--)n[u]=qe(f,10);n[1]=qe(f,5),n[0]=qe(f,10);var l,m=11,A=new Array(11);for(l=5;l>=2;l--)if(l!==3){if(An(f))break;ei(f,-1);for(var I=0;I<l;I++)A[--m]=qe(f,10)}if(l<2&&!An(f))return null;var x={};return x.barcode_id=n.slice(0,2).join(""),x.service_type=n.slice(2,5).join(""),n[5]===9?(x.mailer_id=n.slice(5,14).join(""),x.serial_num=n.slice(14,20).join("")):(x.mailer_id=n.slice(5,11).join(""),x.serial_num=n.slice(11,20).join("")),m<=6&&(x.zip=A.slice(m,m+5).join("")),m<=2&&(x.plus4=A.slice(m+5,m+9).join("")),m===0&&(x.delivery_pt=A.slice(9,11).join("")),x}}function En(r,t,e){for(var o=null,f,a=0;a<r[e].length;a++)if(t[e]=r[e][a],e<9?f=En(r,t,e+1):(f=kn(t),f&&(f.suggest=oi(t),f.message="Damaged barcode")),f){if(o)return{message:"Invalid barcode"};o=f}return o}function In(r){for(var t=1,e=new Array(10),o=0;o<10;o++){e[o]=[];var f=r[o];if(We[f]===void 0)for(var a=0;a<13;a++){var n=f^1<<a;We[n]!==void 0&&e[o].push(n)}else e[o].push(f);if(t*=e[o].length,t===0||t>1e3)return null}var u=new Array(10);return En(e,u,0)}function ni(r){return ri.map(r,function(t){switch(t){case"A":return"D";case"D":return"A";default:return t}}).join("")}function ii(r){var t;if(r.length===64)t=!0;else if(r.length===66)t=!1;else return r;for(var e,o,f=r,a=5,n=0;n<66;n++){o=t?r.substring(0,n)+"X"+r.substring(n):r.substring(0,n)+r.substring(n+1);var u=be(o,!1);e=0;for(var l=0;l<10;l++)We[u[l]]===void 0&&e++;e<a&&(a=e,f=o)}return f}function ui(r,t){for(var e=Math.min(r.length,t.length),o=new Array(e),f=0;f<e;f++)o[f]=r.charAt(f)!==t.charAt(f);return o}});var Tn=Qr(Of=>{"use strict";Of.encode=yn();Of.decode=Cn()});var li=Tn();window.IMB=li;})();
+
+/* ============================================================== */
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-
-/* ---------- storage (best effort) ---------- */
 const store = {
-  get(k, d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  get(k,d){ try { return localStorage.getItem(k) ?? d; } catch(e){ return d; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 };
-/* Service Type Identifiers from the USPS STID table. Codes carry the mail
-   class and which electronic services the barcode requests. "reply" marks
-   the ones that belong on a reply envelope. This is a working subset, not
-   the whole published table, so an unlisted code is reported as unknown. */
+
+/* ---------- service type table ---------- */
 const STID_BUILTIN = {
   "040": ["First-Class Mail, basic, destination IMb tracing", "outbound"],
   "042": ["Standard Mail, basic, destination IMb tracing", "outbound"],
@@ -197,322 +163,282 @@ const STID_BUILTIN = {
   "768": ["First-Class Political Mail, Full-Service with IV tracking, ACS Change Service Option 2", "outbound"],
   "781": ["USPS Political Marketing Mail, Full-Service with IV tracking, ACS Change Service Option 1", "outbound"]
 };
-$("lic").value = store.get("imb_lic", "");
-$("stids").value = store.get("imb_stids", "");
-$("piece").value = store.get("imb_piece", "reply");
+$("stids").value = store.get("imb_stids","");
+$("zip").value   = store.get("imb_zip","");
+$("piece").value = store.get("imb_piece","reply");
+$("zip").addEventListener("input", e => store.set("imb_zip", e.target.value));
 $("piece").addEventListener("change", e => store.set("imb_piece", e.target.value));
-$("nolic").checked = store.get("imb_nolic", "") === "1";
-$("nolic").addEventListener("change", () => {
-  store.set("imb_nolic", $("nolic").checked ? "1" : "0");
-  location.reload();
-});
-$("saveLic").addEventListener("click", () => {
-  store.set("imb_lic", $("lic").value.trim());
-  alert("Saved. Reload the page to apply.");
-});
-$("saveStids").addEventListener("click", () => {
-  store.set("imb_stids", $("stids").value);
-  renderStidList();
-  alert("Saved.");
-});
+$("saveStids").addEventListener("click", () => { store.set("imb_stids", $("stids").value); renderStidList(); });
 
 function stidTable(){
   const t = {};
-  Object.keys(STID_BUILTIN).forEach(code => {
-    t[code] = { desc: STID_BUILTIN[code][0], reply: STID_BUILTIN[code][1] === "reply", added: false };
-  });
-  // User additions sit on top, so a code can also be corrected locally.
+  Object.keys(STID_BUILTIN).forEach(c => t[c] = {desc:STID_BUILTIN[c][0], reply:STID_BUILTIN[c][1]==="reply", added:false});
   $("stids").value.split("\n").forEach(line => {
-    const p = line.split(",").map(x => x.trim());
+    const p = line.split(",").map(x=>x.trim());
     if (p[0] && /^\d{3}$/.test(p[0]))
-      t[p[0]] = { desc: p[1] || "", reply: /^(y|reply)/i.test(p[p.length - 1] || ""), added: true };
+      t[p[0]] = {desc:p[1]||"", reply:/^(y|reply)/i.test(p[p.length-1]||""), added:true};
   });
   return t;
 }
-
 function renderStidList(){
   const t = stidTable();
-  const rows = Object.keys(t).sort().map(code =>
-    '<tr><td class="v" style="width:70px">' + esc(code) + '</td>' +
-    '<td>' + esc(t[code].desc) +
-    (t[code].reply ? ' <span class="badge ok">REPLY</span>' : '') +
-    (t[code].added ? ' <span class="badge unk">YOURS</span>' : '') + '</td></tr>').join("");
-  $("stidList").innerHTML = '<table><tbody>' + rows + '</tbody></table>';
+  $("stidList").innerHTML = '<table><tbody>' + Object.keys(t).sort().map(c =>
+    '<tr><td class="v" style="width:70px">'+esc(c)+'</td><td>'+esc(t[c].desc)+
+    (t[c].reply?' <span class="badge ok">REPLY</span>':'')+
+    (t[c].added?' <span class="badge unk">YOURS</span>':'')+'</td></tr>').join('') + '</tbody></table>';
 }
 
-/* ---------- license ----------
-   Web trial key for localhost and laraburford-prog.github.io, expires 2026-10-05.
-   Anything pasted into the License box on the page overrides this.     */
-const BUILT_IN_LICENSE = "Oy8e5vzdxHtaUkuQD+OQApvWJXxj5LhVanBGygJuvKLp5bYhr4OpphEDlAYX46HT1uqvzVma3tRXqySUR51ifa+I5DmV5JDUV02b0aW+pXz9NRxPtvsJNQohZqnEq3slILBYT5vCl4fswW1pXEGXULOiXqJV28lYorBaBJxVYpmz6ybCMeVQmV6PbBH1m4sgBe8Ja08w/KzMdYIz+hgqgzY2coLSntALBXScf2SdRq0+nPY3lNkN8lY2E5LhbqBj90DhVlsyNOrfYglRpIWnf8qK6stGp/Ny85RREBxcCSqmaMdbUPRjY14r9Hrl4/DvPl51yCRJUdpzXEMREOTh/Q==\nU2NhbmJvdFNESwpsb2NhbGhvc3R8bGFyYWJ1cmZvcmQtcHJvZy5naXRodWIuaW8KMTc5MTI0NDc5OQo4Mzg4NjA3Cjg=\n";
-const licenseKey = () =>
-  store.get("imb_nolic", "") === "1" ? "" : (store.get("imb_lic", "") || BUILT_IN_LICENSE);
-
-/* ---------- IMb field parsing ----------
-   31 digits: barcode ID (2) + service type (3) + mailer ID (6 or 9)
-   + serial (9 or 6) + routing code (0, 5, 9 or 11).
-   Mailer ID is 9 digits when its first digit is 9, otherwise 6.
-   Reply mail may instead carry a 15-digit customer number in place of
-   the mailer ID and serial number, so both readings are shown.        */
-function parseIMb(raw){
-  const d = String(raw).replace(/\D/g, "");
-  const out = { digits: d, errors: [] };
-
-  if (![20, 25, 29, 31].includes(d.length)){
-    out.errors.push(d.length + " digits. An IMb carries 20, 25, 29 or 31.");
-    if (d.length < 20) return out;
+/* ---------- image to 65 bars ----------
+   An IMb is 65 evenly spaced bars. Every bar occupies the middle tracker
+   band; an ascender also reaches up, a descender also reaches down, a full
+   bar does both. So height sorts the bars into three tiers and position
+   relative to the barcode's own baseline separates ascenders from
+   descenders. The paper is rarely flat, so the baseline is fitted as a
+   curve across the whole barcode rather than assumed level.            */
+function otsu(gray){
+  const hist = new Array(256).fill(0);
+  for (let i=0;i<gray.length;i++) hist[gray[i]]++;
+  const total = gray.length;
+  let sum = 0; for (let i=0;i<256;i++) sum += i*hist[i];
+  let sumB=0, wB=0, best=0, thr=128;
+  for (let i=0;i<256;i++){
+    wB += hist[i]; if (!wB) continue;
+    const wF = total - wB; if (!wF) break;
+    sumB += i*hist[i];
+    const mB = sumB/wB, mF = (sum-sumB)/wF;
+    const between = wB*wF*(mB-mF)*(mB-mF);
+    if (between > best){ best = between; thr = i; }
   }
-  out.barcodeId   = d.slice(0, 2);
-  out.serviceType = d.slice(2, 5);
-  const midIs9    = d[5] === "9";
-  out.mailerId    = midIs9 ? d.slice(5, 14) : d.slice(5, 11);
-  out.serial      = midIs9 ? d.slice(14, 20) : d.slice(11, 20);
-  out.customerNumber = d.slice(5, 20);   // the reply-mail reading
-  out.routing     = d.slice(20);
+  return thr;
+}
 
-  // barcode identifier: second digit is the optional endorsement line code, 0-4
-  if (!/^[0-9][0-4]$/.test(out.barcodeId))
-    out.errors.push("Barcode identifier " + out.barcodeId + " is not valid. The second digit must be 0 to 4.");
-
-  if (![0, 5, 9, 11].includes(out.routing.length))
-    out.errors.push("Routing code is " + out.routing.length + " digits. It must be 0, 5, 9 or 11.");
-
-  // A routing code made of zeros routes nowhere. A piece that needs no
-  // routing carries the 20-digit form instead, not a field full of zeros.
-  if (out.routing.length >= 5 && /^0+$/.test(out.routing.slice(0, 9)))
-    out.errors.push("Routing code is all zeros, so this will not sort to the reply address. A piece with no routing should use the 20-digit barcode instead.");
-
-  out.zip   = out.routing.slice(0, 5);
-  out.plus4 = out.routing.slice(5, 9);
-  out.dp    = out.routing.slice(9, 11);
+function components(bin, W, H){
+  const label = new Int32Array(W*H);
+  const out = [];
+  const stack = new Int32Array(W*H);
+  let cur = 0;
+  for (let p=0;p<W*H;p++){
+    if (!bin[p] || label[p]) continue;
+    cur++;
+    let sp=0; stack[sp++]=p; label[p]=cur;
+    let minx=W, maxx=0, miny=H, maxy=0, area=0, sumx=0, sumy=0;
+    while (sp){
+      const q = stack[--sp];
+      const qx = q % W, qy = (q / W) | 0;
+      area++; sumx += qx; sumy += qy;
+      if (qx<minx) minx=qx; if (qx>maxx) maxx=qx;
+      if (qy<miny) miny=qy; if (qy>maxy) maxy=qy;
+      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
+        if (!dx && !dy) continue;
+        const nx = qx+dx, ny = qy+dy;
+        if (nx<0||ny<0||nx>=W||ny>=H) continue;
+        const np = ny*W+nx;
+        if (bin[np] && !label[np]){ label[np]=cur; stack[sp++]=np; }
+      }
+    }
+    out.push({x:minx, y:miny, w:maxx-minx+1, h:maxy-miny+1, area:area, cx:sumx/area, cy:sumy/area});
+  }
   return out;
 }
 
-function checkAgainstZip(p, typed){
-  const t = String(typed || "").replace(/\D/g, "");
-  if (!t) return { state: "unknown", text: "No ZIP+4 entered, so routing was not checked." };
-  if (!p.routing || p.routing.length < 5)
-    return { state: "bad", text: "The barcode carries no routing code, so it cannot route to the reply address." };
-  if (t.length >= 9){
-    const want = t.slice(0, 9), got = p.routing.slice(0, 9);
-    return got === want
-      ? { state: "ok",  text: "Routing " + got.slice(0,5) + "-" + got.slice(5) + " matches the printed address." }
-      : { state: "bad", text: "Barcode routes to " + got.slice(0,5) + "-" + got.slice(5) +
-                              ". The piece is printed " + want.slice(0,5) + "-" + want.slice(5) + "." };
+// least squares quadratic, so a curled envelope does not fool the A/D split
+function quadFit(xs, ys){
+  let s0=xs.length, s1=0,s2=0,s3=0,s4=0, t0=0,t1=0,t2=0;
+  for (let i=0;i<xs.length;i++){
+    const x=xs[i], y=ys[i], x2=x*x;
+    s1+=x; s2+=x2; s3+=x2*x; s4+=x2*x2;
+    t0+=y; t1+=x*y; t2+=x2*y;
   }
-  const want = t.slice(0, 5), got = p.routing.slice(0, 5);
-  return got === want
-    ? { state: "ok",  text: "ZIP " + got + " matches. Enter the full ZIP+4 to check the add-on too." }
-    : { state: "bad", text: "Barcode routes to ZIP " + got + ". The piece is printed " + want + "." };
+  const A=[[s0,s1,s2],[s1,s2,s3],[s2,s3,s4]], b=[t0,t1,t2];
+  for (let i=0;i<3;i++){
+    let piv=i; for (let r=i+1;r<3;r++) if (Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
+    [A[i],A[piv]]=[A[piv],A[i]]; [b[i],b[piv]]=[b[piv],b[i]];
+    if (Math.abs(A[i][i]) < 1e-9) return null;
+    for (let r=i+1;r<3;r++){
+      const f = A[r][i]/A[i][i];
+      for (let c=i;c<3;c++) A[r][c]-=f*A[i][c];
+      b[r]-=f*b[i];
+    }
+  }
+  const c=[0,0,0];
+  for (let i=2;i>=0;i--){
+    let s=b[i]; for (let j=i+1;j<3;j++) s-=A[i][j]*c[j];
+    c[i]=s/A[i][i];
+  }
+  return c; // y = c0 + c1 x + c2 x^2
+}
+const median = a => { const s=[...a].sort((p,q)=>p-q); return s[s.length>>1]; };
+
+function barsFromImage(canvas){
+  const W = canvas.width, H = canvas.height;
+  const d = canvas.getContext("2d", {willReadFrequently:true}).getImageData(0,0,W,H).data;
+  const gray = new Uint8Array(W*H);
+  for (let i=0,p=0;i<d.length;i+=4,p++)
+    gray[p] = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0;
+
+  const thr = otsu(gray);
+  const bin = new Uint8Array(W*H);
+  for (let p=0;p<gray.length;p++) bin[p] = gray[p] < thr ? 1 : 0;
+
+  let comps = components(bin, W, H);
+  if (comps.length < 10) return {error:"Found almost nothing dark in that photo. Get closer and make sure the barcode is in frame."};
+
+  // bars are narrow and tall-ish; drop specks and large blobs
+  const medArea = median(comps.map(c=>c.area));
+  const medW = median(comps.map(c=>c.w));
+  comps = comps.filter(c => c.area >= Math.max(20, medArea*0.15) && c.w <= medW*3 && c.h > c.w);
+  comps.sort((a,b)=>a.cx-b.cx);
+
+  if (comps.length !== 65)
+    return {error:"Found " + comps.length + " bars instead of 65.", count:comps.length};
+
+  const hs = comps.map(c=>c.h).sort((a,b)=>a-b);
+  const lo = hs[Math.floor(hs.length*0.20)], hi = hs[Math.floor(hs.length*0.80)];
+  const mids = comps.map(c=>c.h).filter(h=>h>lo && h<=hi);
+  const talls = comps.map(c=>c.h).filter(h=>h>hi);
+  const shorts= comps.map(c=>c.h).filter(h=>h<lo);
+  if (!mids.length || !talls.length || !shorts.length)
+    return {error:"The bars do not separate into the three heights an IMb needs. Try a squarer, better lit shot."};
+  const tFull  = (median(talls) + median(mids))/2;
+  const tTrack = (median(shorts) + median(mids))/2;
+
+  const coef = quadFit(comps.map(c=>c.cx), comps.map(c=>c.cy));
+  if (!coef) return {error:"Could not work out the barcode's baseline."};
+
+  let out = "";
+  for (const c of comps){
+    const base = coef[0] + coef[1]*c.cx + coef[2]*c.cx*c.cx;
+    if (c.h >= tFull) out += "F";
+    else if (c.h <= tTrack) out += "T";
+    else out += (c.cy < base) ? "A" : "D";
+  }
+  return {bars: out, comps: comps};
 }
 
-/* ---------- rendering ---------- */
+/* ---------- checks ---------- */
+function checkRouting(f, typed){
+  const t = String(typed||"").replace(/\D/g,"");
+  const routing = (f.zip||"") + (f.plus4||"");
+  if (!t) return {state:"unknown", text:"No ZIP+4 entered, so routing was not checked."};
+  if (!routing) return {state:"bad", text:"The barcode carries no routing code, so it cannot route to the reply address."};
+  if (t.length >= 9){
+    const want = t.slice(0,9), got = routing.slice(0,9);
+    return got === want
+      ? {state:"ok",  text:"Routing " + f.zip + "-" + f.plus4 + " matches the printed address."}
+      : {state:"bad", text:"Barcode routes to " + got.slice(0,5) + "-" + got.slice(5) +
+                           ". The piece is printed " + want.slice(0,5) + "-" + want.slice(5) + "."};
+  }
+  return (f.zip === t.slice(0,5))
+    ? {state:"ok",  text:"ZIP " + f.zip + " matches. Enter the full ZIP+4 to check the add-on too."}
+    : {state:"bad", text:"Barcode routes to ZIP " + f.zip + ". The piece is printed " + t.slice(0,5) + "."};
+}
+
 let session = [];
 
-function render(p, raw){
-  const tbl = stidTable();
-  const st  = tbl[p.serviceType];
-  const zipCheck = checkAgainstZip(p, $("zip").value);
-
-  const problems = p.errors.slice();
-  if (zipCheck.state === "bad") problems.push(zipCheck.text);
+function render(f, bars){
+  const tbl = stidTable(), st = tbl[f.service_type];
+  const rc = checkRouting(f, $("zip").value);
   const piece = $("piece").value;
+  const problems = [];
+  if (rc.state === "bad") problems.push(rc.text);
   if (st && piece === "reply" && !st.reply)
-    problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
-                  '", which is not a reply-mail code. On a reply envelope that is usually wrong.');
+    problems.push('Service type ' + f.service_type + ' is "' + st.desc + '", which is not a reply-mail code.');
   if (st && piece === "outbound" && st.reply)
-    problems.push('Service type ' + p.serviceType + ' is "' + st.desc +
-                  '", which belongs on a reply envelope, not an outer envelope.');
+    problems.push('Service type ' + f.service_type + ' is "' + st.desc + '", which belongs on a reply envelope.');
 
   const verdict = problems.length
     ? '<div class="verdict no">Do not approve<small>' + problems.map(esc).join("<br>") + '</small></div>'
-    : zipCheck.state === "unknown"
-      ? '<div class="verdict unk">Not verified<small>' + esc(zipCheck.text) +
-        ' The barcode itself is well formed, but nothing was compared against it.</small></div>'
-      : '<div class="verdict ok">Checks passed<small>' + esc(zipCheck.text) + '</small></div>';
+    : rc.state === "unknown"
+      ? '<div class="verdict unk">Not verified<small>' + esc(rc.text) + '</small></div>'
+      : '<div class="verdict ok">Checks passed<small>' + esc(rc.text) + '</small></div>';
 
-  const stBadge = !st
-    ? '<span class="badge unk">NOT IN YOUR TABLE</span>'
+  const stBadge = !st ? '<span class="badge unk">NOT IN THE TABLE</span>'
     : st.reply ? '<span class="badge ok">REPLY MAIL</span>' : '<span class="badge no">NOT REPLY MAIL</span>';
 
   const rows = [
-    ["Barcode identifier", p.barcodeId, ""],
-    ["Service type", p.serviceType + " " + (st ? st.desc : ""), stBadge],
-    ["Mailer ID", p.mailerId, '<span class="badge unk">' + (p.mailerId || "").length + ' DIGIT</span>'],
-    ["Serial number", p.serial, ""],
-    ["Customer number", p.customerNumber, '<span class="badge unk">REPLY READING</span>'],
-    ["Routing code", p.routing ? p.zip + (p.plus4 ? "-" + p.plus4 : "") + (p.dp ? " DP " + p.dp : "") : "none", ""]
-  ].map(r => '<tr><td class="k">' + esc(r[0]) + '</td><td class="v">' + esc(r[1] || "—") + " " + r[2] + '</td></tr>').join("");
-
-  const segs = p.digits.length >= 20
-    ? [["s0", p.barcodeId], ["s1", p.serviceType], ["s2", p.mailerId], ["s3", p.serial], ["s4", p.routing]]
-        .filter(s => s[1]).map(s => '<span class="seg ' + s[0] + '">' + esc(s[1]) + '</span>').join("")
-    : esc(p.digits);
+    ["Barcode identifier", f.barcode_id, ""],
+    ["Service type", f.service_type + (st ? " " + st.desc : ""), stBadge],
+    ["Mailer ID", f.mailer_id, '<span class="badge unk">'+(f.mailer_id||"").length+' DIGIT</span>'],
+    ["Serial number", f.serial_num, ""],
+    ["Routing code", f.zip ? f.zip + (f.plus4 ? "-"+f.plus4 : "") + (f.delivery_pt ? " DP "+f.delivery_pt : "") : "none", ""]
+  ].map(r => '<tr><td class="k">'+esc(r[0])+'</td><td class="v">'+esc(r[1]||"—")+' '+r[2]+'</td></tr>').join("");
 
   $("result").innerHTML =
     '<div class="card"><h2>Result</h2><div class="body">' + verdict +
-    '<div class="raw">' + segs + '</div>' +
-    '<div class="legend">' +
-      '<span><b class="s0"></b> barcode ID</span>' +
-      '<span><b class="s1"></b> service type</span>' +
-      '<span><b class="s2"></b> mailer ID</span>' +
-      '<span><b class="s3"></b> serial</span>' +
-      '<span><b class="s4"></b> routing</span>' +
-    '</div>' +
-    '<table style="margin-top:12px"><tbody>' + rows + '</tbody></table>' +
-    '<p class="note" style="margin:12px 0 0">Reply mail can carry a 15-digit customer number where outbound mail carries a mailer ID and serial number, so both readings are shown. Which applies depends on how the barcode was built.</p>' +
+    '<table><tbody>' + rows + '</tbody></table>' +
+    '<p class="note" style="margin:14px 0 4px">The 65 bars read from the photo</p>' +
+    '<div class="raw">' + esc(bars) + '</div>' +
     '</div></div>';
 
-  session.unshift({ time: new Date().toLocaleTimeString(), raw: raw, zip: $("zip").value,
-                    routing: p.routing, stid: p.serviceType,
-                    pass: problems.length === 0,
-                    checked: zipCheck.state !== "unknown" });
+  session.unshift({time:new Date().toLocaleTimeString(), zip:$("zip").value,
+                   routing:(f.zip||"")+(f.plus4||""), stid:f.service_type,
+                   pass:problems.length===0, checked:rc.state!=="unknown", bars:bars});
   renderLog();
 }
 
 function renderLog(){
-  if (!session.length){ $("log").innerHTML = '<p class="note">Nothing scanned yet.</p>'; return; }
-  const distinct = new Set(session.map(s => s.routing)).size;
-  const head = (session.length > 1 && distinct > 1)
-    ? '<div class="warn">' + distinct + ' different routing codes in this session. If these pieces are all from one job, that needs explaining.</div>'
-    : "";
-  $("log").innerHTML = head +
-    '<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>' +
-    session.map(s =>
-      '<tr class="' + (!s.pass ? "bad" : s.checked ? "good" : "") + '"><td class="v">' + esc(s.time) + '</td>' +
-      '<td class="v">' + esc(s.routing || "none") + '</td><td class="v">' + esc(s.stid || "") + '</td>' +
-      '<td><span class="badge ' + (s.pass ? "ok" : "no") + '">' + (s.pass ? "PASS" : "FAIL") + '</span></td></tr>'
-    ).join("") + '</tbody></table>';
+  if (!session.length){ $("log").innerHTML = '<p class="note">Nothing checked yet.</p>'; return; }
+  const distinct = new Set(session.map(s=>s.routing)).size;
+  const head = (session.length>1 && distinct>1)
+    ? '<div class="warn">'+distinct+' different routing codes in this session. If these pieces are from one job, that needs explaining.</div>' : "";
+  $("log").innerHTML = head + '<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>' +
+    session.map(s => '<tr class="'+(!s.pass?"bad":s.checked?"good":"")+'">' +
+      '<td class="v">'+esc(s.time)+'</td><td class="v">'+esc(s.routing||"none")+'</td>' +
+      '<td class="v">'+esc(s.stid||"")+'</td><td><span class="badge '+(!s.pass?"no":s.checked?"ok":"unk")+'">' +
+      (!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED")+'</span></td></tr>').join("") + '</tbody></table>';
 }
 
-$("manualBtn").addEventListener("click", () => {
-  const d = $("manual").value.replace(/\D/g, "");
-  if (!d) { $("manual").focus(); return; }
-  render(parseIMb(d), d);
-});
-
-$("clearBtn").addEventListener("click", () => { session = []; renderLog(); $("result").innerHTML = ""; });
+$("clearBtn").addEventListener("click", () => { session=[]; renderLog(); $("result").innerHTML=""; });
 $("exportBtn").addEventListener("click", () => {
   if (!session.length) return;
-  const csv = ["time,barcode,printed_zip,routing,service_type,result"].concat(
-    session.map(s => [s.time, s.raw, s.zip, s.routing, s.stid, s.pass ? "PASS" : "FAIL"]
-      .map(x => '"' + String(x == null ? "" : x).replace(/"/g, '""') + '"').join(","))
-  ).join("\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  a.download = "imb-check-" + new Date().toISOString().slice(0, 10) + ".csv";
+  const csv = ["time,printed_zip,routing,service_type,result,bars"].concat(
+    session.map(s => [s.time,s.zip,s.routing,s.stid,(!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED"),s.bars]
+      .map(x => '"'+String(x==null?"":x).replace(/"/g,'""')+'"').join(","))).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="imb-check-"+new Date().toISOString().slice(0,10)+".csv";
   a.click(); URL.revokeObjectURL(a.href);
 });
 
-
-/* ---------- scanner settings ---------- */
-const SET = {
-  shape: () => store.get("imb_shape", "6"),
-  zoom:  () => store.get("imb_zoom", "2"),
-  fmts:  () => store.get("imb_fmts", "imb"),
-  diag:  () => store.get("imb_diag", "") === "1"
-};
-$("shape").value = SET.shape();
-$("zoom").value  = SET.zoom();
-$("fmts").value  = SET.fmts();
-$("diag").checked = SET.diag();
-$("shape").addEventListener("change", e => { store.set("imb_shape", e.target.value); showCfg(); });
-$("zoom").addEventListener("change",  e => { store.set("imb_zoom",  e.target.value); showCfg(); });
-$("fmts").addEventListener("change",  e => { store.set("imb_fmts",  e.target.value); showCfg(); });
-$("diag").addEventListener("change",  e => store.set("imb_diag", e.target.checked ? "1" : "0"));
-function showCfg(){
-  $("cfgNote").textContent = "Window " + SET.shape() + " to 1, starting zoom " + SET.zoom() +
-    "x, " + (SET.fmts() === "imb" ? "Intelligent Mail only" : "all formats") + ". Takes effect on the next scan.";
-}
-showCfg();
-
-/* ---------- scanner ---------- */
-let sdk = null;
-
-(async function(){
+/* ---------- photo in ---------- */
+$("photo").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  $("status").textContent = "Reading the photo…";
+  $("result").innerHTML = "";
   try {
-    sdk = await ScanbotSDK.initialize({
-      licenseKey: licenseKey(),
-      enginePath: "https://cdn.jsdelivr.net/npm/scanbot-web-sdk@latest/bundle/bin/complete/"
-    });
-    $("sdkNote").textContent = licenseKey()
-      ? "Scanner ready. Licensed through October 5."
-      : "Scanner ready, unlicensed. Each session lasts 60 seconds.";
-  } catch (e) {
-    $("sdkNote").innerHTML = '<span style="color:var(--fail)">Scanner failed to load: ' + esc(e.message || e) + '</span>';
-    $("scanBtn").disabled = true;
-  }
-})();
+    const bmp = await createImageBitmap(file);
+    // cap the long edge so a 12-megapixel phone shot does not crawl
+    const maxW = 2400;
+    const scale = Math.min(1, maxW / bmp.width);
+    const cv = document.createElement("canvas");
+    cv.width = Math.round(bmp.width*scale);
+    cv.height = Math.round(bmp.height*scale);
+    cv.getContext("2d", {willReadFrequently:true}).drawImage(bmp, 0, 0, cv.width, cv.height);
 
-$("scanBtn").addEventListener("click", async () => {
-  if (!sdk) return;
-  try {
-    const config = new ScanbotSDK.UI.Config.BarcodeScannerScreenConfiguration();
-
-    // An IMb is long and short. The viewfinder defaults to square, which is
-    // why it is hard to fill the frame with one.
-    config.viewFinder.visible = true;
-    config.viewFinder.aspectRatio = { width: parseFloat(SET.shape()), height: 1 };
-
-    // Give the user real zoom steps and start part way in.
-    config.cameraConfiguration.zoomSteps = [1, 2, 3, 5];
-    config.cameraConfiguration.defaultZoomFactor = parseFloat(SET.zoom());
-
-    // Accept only the Intelligent Mail barcode. The correct path is
-    // barcodeFormatConfigurations, and objects are identified by _type.
-    if (SET.fmts() === "imb") {
-      config.scannerConfiguration.barcodeFormatConfigurations = [
-        { _type: "BarcodeFormatUSPSIntelligentMailConfiguration" }
-      ];
+    const got = barsFromImage(cv);
+    if (got.error){
+      $("status").textContent = "";
+      $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' + esc(got.error) +
+        '<br><br>The barcode should fill the frame left to right, with the phone square to the envelope.</div></div></div>';
+      return;
     }
-
-    const result = await ScanbotSDK.UI.createBarcodeScanner(config);
-    if (!result || !result.items || !result.items.length) return;
-
-    const item = result.items[0];
-    const raw = (item.barcode && item.barcode.text) || item.text || item.textWithExtension || String(item);
-    render(parseIMb(raw), raw);
-
-    // Always show what the SDK actually returned. Until the routing code is
-    // trusted, the raw value matters more than my interpretation of it.
-    const bc = item.barcode || item;
-    const probe = {
-      itemsReturned: result.items.length,
-      wrapperKeys: Object.keys(item),
-      barcodeKeys: Object.keys(bc),
-      format: bc.format,
-      textVerbatim: JSON.stringify(bc.text),
-      textLength: (bc.text || "").length,
-      digitsOnly: String(bc.text || "").replace(/\D/g, ""),
-      digitCount: String(bc.text || "").replace(/\D/g, "").length,
-      rawBytesLength: bc.rawBytes ? bc.rawBytes.length : null,
-      rawBytesAsText: bc.rawBytes ? Array.from(bc.rawBytes).map(function(b){
-        return (b >= 32 && b < 127) ? String.fromCharCode(b) : "."; }).join("") : null,
-      extractedDocument: bc.extractedDocument ? JSON.stringify(bc.extractedDocument).slice(0, 400) : null
-    };
-    const box = document.createElement("div");
-    box.className = "card";
-    box.innerHTML = '<h2>What the SDK returned</h2><div class="body">' +
-      '<div class="raw" id="probeBox">' + esc(JSON.stringify(probe, null, 1)) + '</div>' +
-      '<div class="row" style="margin-top:10px"><button class="ghost" id="copyProbe">Copy this</button></div></div>';
-    $("result").appendChild(box);
-    const cp = document.getElementById("copyProbe");
-    if (cp) cp.addEventListener("click", () => {
-      navigator.clipboard.writeText(JSON.stringify(probe, null, 1)).then(
-        () => { cp.textContent = "Copied"; },
-        () => { cp.textContent = "Select the text above and copy it"; }
-      );
+    window.IMB.decode(got.bars, (err, fields) => {
+      $("status").textContent = "";
+      if (err){
+        $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' +
+          'Read 65 bars but they did not decode to a valid barcode, so some were misread.' +
+          '<br><br><span style="font-family:var(--mono);font-size:11px">' + esc(got.bars) + '</span>' +
+          '</div></div></div>';
+        return;
+      }
+      render(fields, got.bars);
     });
-
-    if (SET.diag()) {
-      const d = document.createElement("div");
-      d.className = "card";
-      d.innerHTML = '<h2>Raw result</h2><div class="body"><div class="raw">' +
-        esc(JSON.stringify(result, null, 1).slice(0, 3000)) + '</div></div>';
-      $("result").appendChild(d);
-    }
-  } catch (e) {
-    alert("Scan failed: " + (e.message || e));
+  } catch (err) {
+    $("status").textContent = "";
+    alert("Could not read that photo: " + (err.message || err));
   }
+  e.target.value = "";
 });
 
 renderLog();
