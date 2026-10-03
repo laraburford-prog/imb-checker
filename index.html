@@ -31,7 +31,7 @@
   .field{margin-bottom:12px} .field:last-child{margin-bottom:0}
   :focus-visible{outline:2px solid var(--blue);outline-offset:-1px}
   button{font-family:var(--sans);font-size:15px;font-weight:600;background:var(--ink);color:#fff;
-         border:1px solid var(--ink);border-radius:2px;padding:13px 18px;cursor:pointer;width:100%}
+         border:1px solid var(--ink);border-radius:2px;padding:14px 18px;cursor:pointer;width:100%}
   button.ghost{background:transparent;color:var(--ink);border-color:var(--rule);font-size:13px;padding:8px 13px;width:auto}
   .row{display:flex;gap:8px;flex-wrap:wrap}
   .note{font-size:12.5px;color:var(--muted);margin:0 0 10px}
@@ -55,19 +55,43 @@
   .badge.no{background:var(--fail-bg);color:var(--fail)}
   .badge.unk{background:var(--amber-bg);color:var(--amber)}
   .raw{font-family:var(--mono);font-size:11.5px;word-break:break-all;background:var(--paper);padding:9px;border-radius:2px;line-height:1.6}
-  canvas{max-width:100%;border:1px solid var(--rule);border-radius:2px;display:block;margin-top:10px}
-  .shot{display:block;width:100%;padding:16px;text-align:center;background:var(--ink);color:#fff;
-        border-radius:2px;font-weight:600;cursor:pointer}
-  ul.tips{margin:8px 0 0;padding-left:18px;font-size:12.5px;color:var(--muted)}
-  ul.tips li{margin-bottom:3px}
+  img.shot{width:100%;border:1px solid var(--rule);border-radius:2px;margin-top:10px;display:block}
+
+  /* camera */
+  #cam{position:fixed;inset:0;background:#000;z-index:50;display:none}
+  #cam.on{display:block}
+  #cam video{width:100%;height:100%;object-fit:cover;display:block}
+  .guide{position:absolute;left:4%;right:4%;top:50%;transform:translateY(-50%);
+         height:16vh;border:2px solid rgba(255,255,255,.9);border-radius:4px;
+         box-shadow:0 0 0 100vmax rgba(0,0,0,.45);pointer-events:none}
+  .camtop{position:absolute;top:0;left:0;right:0;padding:14px calc(14px + env(safe-area-inset-right)) 14px calc(14px + env(safe-area-inset-left));
+          padding-top:calc(14px + env(safe-area-inset-top));display:flex;gap:10px;align-items:center}
+  .camtop button{width:auto;background:rgba(0,0,0,.55);border-color:rgba(255,255,255,.35);color:#fff;font-size:14px;padding:10px 14px}
+  .camtop .sp{flex:1}
+  .camfoot{position:absolute;left:0;right:0;bottom:0;padding:18px 16px calc(24px + env(safe-area-inset-bottom));
+           text-align:center;color:#fff;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+  .camfoot b{display:block;font-size:16px;margin-bottom:3px}
 </style>
 </head>
 <body>
+
+<div id="cam">
+  <video id="vid" playsinline muted autoplay></video>
+  <div class="guide"></div>
+  <div class="camtop">
+    <button id="camClose">Cancel</button>
+    <div class="sp"></div>
+    <button id="torch" hidden>Light</button>
+  </div>
+  <div class="camfoot"><b id="camMsg">Line the barcode up inside the box</b>
+    <span id="camSub">Fill the box left to right, phone square to the envelope</span></div>
+</div>
+
 <div class="wrap">
 
 <header>
   <h1>IMb Checker</h1>
-  <p>Photograph the barcode on a reply envelope and check it against the address printed on the piece.</p>
+  <p>Scan the barcode on a reply envelope and check it against the address printed on the piece.</p>
 </header>
 
 <div class="card"><h2>Check a piece</h2><div class="body">
@@ -82,14 +106,12 @@
       <option value="outbound">Outer envelope</option>
     </select>
   </div>
-  <label class="shot" for="photo">Take a photo of the barcode</label>
+  <button id="scanBtn">Scan the barcode</button>
+  <div class="row" style="margin-top:10px;justify-content:center">
+    <button class="ghost" id="photoBtn">Use a photo instead</button>
+  </div>
   <input type="file" id="photo" accept="image/*" capture="environment" hidden>
-  <ul class="tips">
-    <li>Fill the frame with the barcode, left edge to right edge.</li>
-    <li>Hold the phone square to the envelope, not at an angle.</li>
-    <li>Flat, even light. Avoid shadow falling across the bars.</li>
-  </ul>
-  <p class="note" id="status" style="margin-top:10px"></p>
+  <p class="note" id="status" style="margin:10px 0 0"></p>
 </div></div>
 
 <div id="result"></div>
@@ -118,7 +140,7 @@
 </div>
 
 <script>
-/* ===== bundled USPS Intelligent Mail encoder/decoder, CC0 ===== */
+/* ===== USPS Intelligent Mail encoder/decoder, bundled, CC0 ===== */
 (()=>{var Ue=Object.defineProperty;var Bn=Object.getOwnPropertyDescriptor;var On=Object.getOwnPropertyNames;var Mn=Object.prototype.hasOwnProperty;var i=(r,t,e)=>()=>{if(e)throw e[0];try{return r&&(t=r(r=0)),t}catch(o){throw e=[o],o}};var Qr=(r,t)=>()=>{try{return t||r((t={exports:{}}).exports,t),t.exports}catch(e){throw t=0,e}},Mf=(r,t)=>{for(var e in t)Ue(r,e,{get:t[e],enumerable:!0})},Pn=(r,t,e,o)=>{if(t&&typeof t=="object"||typeof t=="function")for(let f of On(t))!Mn.call(r,f)&&f!==e&&Ue(r,f,{get:()=>t[f],enumerable:!(o=Bn(t,f))||o.enumerable});return r};var Ze=r=>Pn(Ue({},"__esModule",{value:!0}),r);var jr,Ke,rt,Mt,Xe,Pf,X,$,Df,Ge,Ff,Lf,$e,Ye,Je,Nf,zf,Pt,He,Rf,_=i(()=>{jr="1.13.8",Ke=typeof self=="object"&&self.self===self&&self||typeof global=="object"&&global.global===global&&global||Function("return this")()||{},rt=Array.prototype,Mt=Object.prototype,Xe=typeof Symbol<"u"?Symbol.prototype:null,Pf=rt.push,X=rt.slice,$=Mt.toString,Df=Mt.hasOwnProperty,Ge=typeof ArrayBuffer<"u",Ff=typeof DataView<"u",Lf=Array.isArray,$e=Object.keys,Ye=Object.create,Je=Ge&&ArrayBuffer.isView,Nf=isNaN,zf=isFinite,Pt=!{toString:null}.propertyIsEnumerable("toString"),He=["valueOf","isPrototypeOf","toString","propertyIsEnumerable","hasOwnProperty","toLocaleString"],Rf=Math.pow(2,53)-1});function d(r,t){return t=t==null?r.length-1:+t,function(){for(var e=Math.max(arguments.length-t,0),o=Array(e),f=0;f<e;f++)o[f]=arguments[f+t];switch(t){case 0:return r.call(this,o);case 1:return r.call(this,arguments[0],o);case 2:return r.call(this,arguments[0],arguments[1],o)}var a=Array(t+1);for(f=0;f<t;f++)a[f]=arguments[f];return a[t]=o,r.apply(this,a)}}var D=i(()=>{});function T(r){var t=typeof r;return t==="function"||t==="object"&&!!r}var j=i(()=>{});function Dt(r){return r===null}var Vf=i(()=>{});function Er(r){return r===void 0}var Qe=i(()=>{});function Sr(r){return r===!0||r===!1||$.call(r)==="[object Boolean]"}var je=i(()=>{_()});function Ft(r){return!!(r&&r.nodeType===1)}var qf=i(()=>{});function c(r){var t="[object "+r+"]";return function(e){return $.call(e)===t}}var S=i(()=>{_()});var lr,Lt=i(()=>{S();lr=c("String")});var tt,ro=i(()=>{S();tt=c("Number")});var to,bf=i(()=>{S();to=c("Date")});var eo,Wf=i(()=>{S();eo=c("RegExp")});var oo,Uf=i(()=>{S();oo=c("Error")});var et,fo=i(()=>{S();et=c("Symbol")});var ot,ao=i(()=>{S();ot=c("ArrayBuffer")});var Zf,Dn,h,z=i(()=>{S();_();Zf=c("Function"),Dn=Ke.document&&Ke.document.childNodes;typeof/./!="function"&&typeof Int8Array!="object"&&typeof Dn!="function"&&(Zf=function(r){return typeof r=="function"||!1});h=Zf});var no,Kf=i(()=>{S();no=c("Object")});var Nt,Cr,Tr=i(()=>{_();Kf();Nt=Ff&&(!/\[native code\]/.test(String(DataView))||no(new DataView(new ArrayBuffer(8)))),Cr=typeof Map<"u"&&no(new Map)});function Ln(r){return r!=null&&h(r.getInt8)&&ot(r.buffer)}var Fn,rr,zt=i(()=>{S();z();ao();Tr();Fn=c("DataView");rr=Nt?Ln:Fn});var O,tr=i(()=>{_();S();O=Lf||c("Array")});function C(r,t){return r!=null&&Df.call(r,t)}var Y=i(()=>{_()});var io,mr,Rt=i(()=>{S();Y();io=c("Arguments");(function(){io(arguments)||(io=function(r){return C(r,"callee")})})();mr=io});function Vt(r){return!et(r)&&zf(r)&&!isNaN(parseFloat(r))}var Xf=i(()=>{_();fo()});function Br(r){return tt(r)&&Nf(r)}var uo=i(()=>{_();ro()});function Or(r){return function(){return r}}var lo=i(()=>{});function ft(r){return function(t){var e=r(t);return typeof e=="number"&&e>=0&&e<=Rf}}var mo=i(()=>{_()});function at(r){return function(t){return t?.[r]}}var po=i(()=>{});var pr,qt=i(()=>{po();pr=at("byteLength")});var Gf,$f=i(()=>{mo();qt();Gf=ft(pr)});function zn(r){return Je?Je(r)&&!rr(r):Gf(r)&&Nn.test($.call(r))}var Nn,nt,so=i(()=>{_();zt();lo();$f();Nn=/\[object ((I|Ui)nt(8|16|32)|Float(32|64)|Uint8Clamped|Big(I|Ui)nt64)Array\]/;nt=Ge?zn:Or(!1)});var g,R=i(()=>{po();g=at("length")});function Rn(r){for(var t={},e=r.length,o=0;o<e;++o)t[r[o]]=!0;return{contains:function(f){return t[f]===!0},push:function(f){return t[f]=!0,r.push(f)}}}function it(r,t){t=Rn(t);var e=He.length,o=r.constructor,f=h(o)&&o.prototype||Mt,a="constructor";for(C(r,a)&&!t.contains(a)&&t.push(a);e--;)a=He[e],a in r&&r[a]!==f[a]&&!t.contains(a)&&t.push(a)}var co=i(()=>{_();z();Y()});function s(r){if(!T(r))return[];if($e)return $e(r);var t=[];for(var e in r)C(r,e)&&t.push(e);return Pt&&it(r,t),t}var k=i(()=>{j();_();Y();co()});function bt(r){if(r==null)return!0;var t=g(r);return typeof t=="number"&&(O(r)||lr(r)||mr(r))?t===0:g(s(r))===0}var Yf=i(()=>{R();tr();Lt();Rt();k()});function Mr(r,t){var e=s(t),o=e.length;if(r==null)return!o;for(var f=Object(r),a=0;a<o;a++){var n=e[a];if(t[n]!==f[n]||!(n in f))return!1}return!0}var vo=i(()=>{k()});function p(r){if(r instanceof p)return r;if(!(this instanceof p))return new p(r);this._wrapped=r}var F=i(()=>{_();p.VERSION=jr;p.prototype.value=function(){return this._wrapped};p.prototype.valueOf=p.prototype.toJSON=p.prototype.value;p.prototype.toString=function(){return String(this._wrapped)}});function Wt(r){return new Uint8Array(r.buffer||r,r.byteOffset||0,pr(r))}var Jf=i(()=>{qt()});function Ut(r,t){for(var e=[{a:r,b:t}],o=[],f=[];e.length;){var a=e.pop();if(a===!0){o.pop(),f.pop();continue}if(r=a.a,t=a.b,r===t){if(r!==0||1/r===1/t)continue;return!1}if(r==null||t==null)return!1;if(r!==r){if(t!==t)continue;return!1}var n=typeof r;if(n!=="function"&&n!=="object"&&typeof t!="object")return!1;r instanceof p&&(r=r._wrapped),t instanceof p&&(t=t._wrapped);var u=$.call(r);if(u!==$.call(t))return!1;if(Nt&&u=="[object Object]"&&rr(r)){if(!rr(t))return!1;u=Hf}switch(u){case"[object RegExp]":case"[object String]":if(""+r==""+t)continue;return!1;case"[object Number]":e.push({a:+r,b:+t});continue;case"[object Date]":case"[object Boolean]":if(+r==+t)continue;return!1;case"[object Symbol]":if(Xe.valueOf.call(r)===Xe.valueOf.call(t))continue;return!1;case"[object ArrayBuffer]":case Hf:e.push({a:Wt(r),b:Wt(t)});continue}var l=u==="[object Array]";if(!l&&nt(r)){var m=pr(r);if(m!==pr(t))return!1;if(r.buffer===t.buffer&&r.byteOffset===t.byteOffset)continue;l=!0}if(!l){if(typeof r!="object"||typeof t!="object")return!1;var A=r.constructor,I=t.constructor;if(A!==I&&!(h(A)&&A instanceof A&&h(I)&&I instanceof I)&&"constructor"in r&&"constructor"in t)return!1}for(var x=o.length;x--;)if(o[x]===r){if(f[x]===t)break;return!1}if(!(x>=0))if(o.push(r),f.push(t),e.push(!0),l){if(x=r.length,x!==t.length)return!1;for(;x--;)e.push({a:r[x],b:t[x]})}else{var Hr=s(r),Ot;if(x=Hr.length,s(t).length!==x)return!1;for(;x--;){if(Ot=Hr[x],!C(t,Ot))return!1;e.push({a:r[Ot],b:t[Ot]})}}}return!0}var Hf,Qf=i(()=>{F();_();qt();so();z();Tr();zt();k();Y();Jf();Hf="[object DataView]"});function b(r){if(!T(r))return[];var t=[];for(var e in r)t.push(e);return Pt&&it(r,t),t}var Pr=i(()=>{j();_();co()});function Dr(r){var t=g(r);return function(e){if(e==null)return!1;var o=b(e);if(g(o))return!1;for(var f=0;f<t;f++)if(!h(e[r[f]]))return!1;return r!==xo||!h(e[ho])}}var ho,jf,go,ra,ta,xo,ea,Zt=i(()=>{R();z();Pr();ho="forEach",jf="has",go=["clear","delete"],ra=["get",jf,"set"],ta=go.concat(ho,ra),xo=go.concat(ra),ea=["add"].concat(go,ho,jf)});var yo,oa=i(()=>{S();Tr();Zt();yo=Cr?Dr(ta):c("Map")});var Ao,fa=i(()=>{S();Tr();Zt();Ao=Cr?Dr(xo):c("WeakMap")});var _o,aa=i(()=>{S();Tr();Zt();_o=Cr?Dr(ea):c("Set")});var wo,na=i(()=>{S();wo=c("WeakSet")});function L(r){for(var t=s(r),e=t.length,o=Array(e),f=0;f<e;f++)o[f]=r[t[f]];return o}var sr=i(()=>{k()});function Kt(r){for(var t=s(r),e=t.length,o=Array(e),f=0;f<e;f++)o[f]=[t[f],r[t[f]]];return o}var ia=i(()=>{k()});function Fr(r){for(var t={},e=s(r),o=0,f=e.length;o<f;o++)t[r[e[o]]]=e[o];return t}var Io=i(()=>{k()});function cr(r){var t=[];for(var e in r)h(r[e])&&t.push(e);return t.sort()}var ko=i(()=>{z()});function dr(r,t){return function(e){var o=arguments.length;if(t&&(e=Object(e)),o<2||e==null)return e;for(var f=1;f<o;f++)for(var a=arguments[f],n=r(a),u=n.length,l=0;l<u;l++){var m=n[l];(!t||e[m]===void 0)&&(e[m]=a[m])}return e}}var Xt=i(()=>{});var ut,Eo=i(()=>{Xt();Pr();ut=dr(b)});var er,Gt=i(()=>{Xt();k();er=dr(s)});var lt,So=i(()=>{Xt();Pr();lt=dr(b,!0)});function Vn(){return function(){}}function mt(r){if(!T(r))return{};if(Ye)return Ye(r);var t=Vn();t.prototype=r;var e=new t;return t.prototype=null,e}var Co=i(()=>{j();_()});function $t(r,t){var e=mt(r);return t&&er(e,t),e}var ua=i(()=>{Co();Gt()});function Yt(r){return T(r)?O(r)?r.slice():ut({},r):r}var la=i(()=>{j();tr();Eo()});function Jt(r,t){return t(r),r}var ma=i(()=>{});function pt(r){return O(r)?r:[r]}var To=i(()=>{F();tr();p.toPath=pt});function W(r){return p.toPath(r)}var Lr=i(()=>{F();To()});function vr(r,t){for(var e=t.length,o=0;o<e;o++){if(r==null)return;r=r[t[o]]}return e?r:void 0}var Ht=i(()=>{});function Nr(r,t,e){var o=vr(r,W(t));return Er(o)?e:o}var Bo=i(()=>{Lr();Ht();Qe()});function Qt(r,t){t=W(t);for(var e=t.length,o=0;o<e;o++){var f=t[o];if(!C(r,f))return!1;r=r[f]}return!!e}var pa=i(()=>{Y();Lr()});function or(r){return r}var jt=i(()=>{});function U(r){return r=er({},r),function(t){return Mr(t,r)}}var st=i(()=>{Gt();vo()});function fr(r){return r=W(r),function(t){return vr(t,r)}}var re=i(()=>{Ht();Lr()});function Z(r,t,e){if(t===void 0)return r;switch(e??3){case 1:return function(o){return r.call(t,o)};case 3:return function(o,f,a){return r.call(t,o,f,a)};case 4:return function(o,f,a,n){return r.call(t,o,f,a,n)}}return function(){return r.apply(t,arguments)}}var zr=i(()=>{});function ct(r,t,e){return r==null?or:h(r)?Z(r,t,e):T(r)&&!O(r)?U(r):fr(r)}var Oo=i(()=>{jt();z();j();tr();st();re();zr()});function hr(r,t){return ct(r,t,1/0)}var Mo=i(()=>{F();Oo();p.iteratee=hr});function v(r,t,e){return p.iteratee!==hr?p.iteratee(r,t):ct(r,t,e)}var M=i(()=>{F();Oo();Mo()});function te(r,t,e){t=v(t,e);for(var o=s(r),f=o.length,a={},n=0;n<f;n++){var u=o[n];a[u]=t(r[u],u,r)}return a}var sa=i(()=>{M();k()});function Rr(){}var Po=i(()=>{});function ee(r){return r==null?Rr:function(t){return Nr(r,t)}}var ca=i(()=>{Po();Bo()});function oe(r,t,e){var o=Array(Math.max(0,r));t=Z(t,e,1);for(var f=0;f<r;f++)o[f]=t(f);return o}var da=i(()=>{zr()});function gr(r,t){return t==null&&(t=r,r=0),r+Math.floor(Math.random()*(t-r+1))}var Do=i(()=>{});var J,fe=i(()=>{J=Date.now||function(){return new Date().getTime()}});function dt(r){var t=function(a){return r[a]},e="(?:"+s(r).join("|")+")",o=RegExp(e),f=RegExp(e,"g");return function(a){return a=a==null?"":""+a,o.test(a)?a.replace(f,t):a}}var Fo=i(()=>{k()});var ae,Lo=i(()=>{ae={"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#x27;","`":"&#x60;"}});var No,va=i(()=>{Fo();Lo();No=dt(ae)});var ha,ga=i(()=>{Io();Lo();ha=Fr(ae)});var zo,xa=i(()=>{Fo();ga();zo=dt(ha)});var Ro,Vo=i(()=>{F();Ro=p.templateSettings={evaluate:/<%([\s\S]+?)%>/g,interpolate:/<%=([\s\S]+?)%>/g,escape:/<%-([\s\S]+?)%>/g}});function Wn(r){return"\\"+qn[r]}function ne(r,t,e){!t&&e&&(t=e),t=lt({},t,p.templateSettings);var o=RegExp([(t.escape||qo).source,(t.interpolate||qo).source,(t.evaluate||qo).source].join("|")+"|$","g"),f=0,a="__p+='";r.replace(o,function(m,A,I,x,Hr){return a+=r.slice(f,Hr).replace(bn,Wn),f=Hr+m.length,A?a+=`'+
 ((__t=(`+A+`))==null?'':_.escape(__t))+
 '`:I?a+=`'+
@@ -133,7 +155,177 @@ __p+='`),m}),a+=`';
 `;var u;try{u=new Function(n,"_",a)}catch(m){throw m.source=a,m}var l=function(m){return u.call(this,m,p)};return l.source="function("+n+`){
 `+a+"}",l}var qo,qn,bn,Un,ya=i(()=>{So();F();Vo();qo=/(.)^/,qn={"'":"'","\\":"\\","\r":"r","\n":"n","\u2028":"u2028","\u2029":"u2029"},bn=/\\|'|\r|\n|\u2028|\u2029/g;Un=/^\s*(\w|\$)+\s*$/});function ie(r,t,e){t=W(t);var o=t.length;if(!o)return h(e)?e.call(r):e;for(var f=0;f<o;f++){var a=r?.[t[f]];a===void 0&&(a=e,f=o),r=h(a)?a.call(r):a}return r}var Aa=i(()=>{z();Lr()});function ue(r){var t=++Zn+"";return r?r+t:t}var Zn,_a=i(()=>{Zn=0});function le(r){var t=p(r);return t._chain=!0,t}var wa=i(()=>{F()});function vt(r,t,e,o,f){if(!(o instanceof t))return r.apply(e,f);var a=mt(r.prototype),n=r.apply(a,f);return T(n)?n:a}var bo=i(()=>{Co();j()});var Wo,H,ht=i(()=>{D();bo();F();Wo=d(function(r,t){var e=Wo.placeholder,o=function(){for(var f=0,a=t.length,n=Array(a),u=0;u<a;u++)n[u]=t[u]===e?arguments[f++]:t[u];for(;f<arguments.length;)n.push(arguments[f++]);return vt(r,o,this,this,n)};return o});Wo.placeholder=p;H=Wo});var gt,Uo=i(()=>{D();z();bo();gt=d(function(r,t,e){if(!h(r))throw new TypeError("Bind must be called on a function");var o=d(function(f){return vt(r,o,t,this,e.concat(f))});return o})});var y,N=i(()=>{mo();R();y=ft(g)});function V(r,t,e){!t&&t!==0&&(t=1/0);for(var o=[],f=0,a=0,n=g(r)||0,u=[];;){if(a>=n){if(!u.length)break;var l=u.pop();a=l.i,r=l.v,n=g(r);continue}var m=r[a++];u.length>=t?o[f++]=m:y(m)&&(O(m)||mr(m))?(u.push({i:a,v:r}),a=0,r=m,n=g(r)):e||(o[f++]=m)}return o}var xr=i(()=>{R();N();tr();Rt()});var Zo,Ia=i(()=>{D();xr();Uo();Zo=d(function(r,t){t=V(t,!1,!1);var e=t.length;if(e<1)throw new Error("bindAll must be passed function names");for(;e--;){var o=t[e];r[o]=gt(r[o],r)}return r})});function me(r,t){var e=function(o){var f=e.cache,a=""+(t?t.apply(this,arguments):o);return C(f,a)||(f[a]=r.apply(this,arguments)),f[a]};return e.cache={},e}var ka=i(()=>{Y()});var xt,Ko=i(()=>{D();xt=d(function(r,t,e){return setTimeout(function(){return r.apply(null,e)},t)})});var Xo,Ea=i(()=>{ht();Ko();F();Xo=H(xt,p,1)});function pe(r,t,e){var o,f,a,n,u=0;e||(e={});var l=function(){u=e.leading===!1?0:J(),o=null,n=r.apply(f,a),o||(f=a=null)},m=function(){var A=J();!u&&e.leading===!1&&(u=A);var I=t-(A-u);return f=this,a=arguments,I<=0||I>t?(o&&(clearTimeout(o),o=null),u=A,n=r.apply(f,a),o||(f=a=null)):!o&&e.trailing!==!1&&(o=setTimeout(l,I)),n};return m.cancel=function(){clearTimeout(o),u=0,o=f=a=null},m}var Sa=i(()=>{fe()});function se(r,t,e){var o,f,a,n,u,l=function(){var A=J()-f;t>A?o=setTimeout(l,t-A):(o=null,e||(n=r.apply(u,a)),o||(a=u=null))},m=d(function(A){return u=this,a=A,f=J(),o||(o=setTimeout(l,t),e&&(n=r.apply(u,a))),n});return m.cancel=function(){clearTimeout(o),o=a=u=null},m}var Ca=i(()=>{D();fe()});function ce(r,t){return H(t,r)}var Ta=i(()=>{ht()});function ar(r){return function(){return!r.apply(this,arguments)}}var de=i(()=>{});function ve(){var r=arguments,t=r.length-1;return function(){for(var e=t,o=r[t].apply(this,arguments);e--;)o=r[e].call(this,o);return o}}var Ba=i(()=>{});function he(r,t){return function(){if(--r<1)return t.apply(this,arguments)}}var Oa=i(()=>{});function Vr(r,t){var e;return function(){return--r>0&&(e=t.apply(this,arguments)),r<=1&&(t=null),e}}var Go=i(()=>{});var $o,Ma=i(()=>{ht();Go();$o=H(Vr,2)});function qr(r,t,e){t=v(t,e);for(var o=s(r),f,a=0,n=o.length;a<n;a++)if(f=o[a],t(r[f],f,r))return f}var Yo=i(()=>{M();k()});function yt(r){return function(t,e,o){e=v(e,o);for(var f=g(t),a=r>0?0:f-1;a>=0&&a<f;a+=r)if(e(t[a],a,t))return a;return-1}}var Jo=i(()=>{M();R()});var yr,ge=i(()=>{Jo();yr=yt(1)});var At,Ho=i(()=>{Jo();At=yt(-1)});function br(r,t,e,o){e=v(e,o,1);for(var f=e(t),a=0,n=g(r);a<n;){var u=Math.floor((a+n)/2);e(r[u])<f?a=u+1:n=u}return a}var Qo=i(()=>{M();R()});function _t(r,t,e){return function(o,f,a){var n=0,u=g(o);if(typeof a=="number")r>0?n=a>=0?a:Math.max(a+u,n):u=a>=0?Math.min(a+1,u):a+u+1;else if(e&&a&&u)return a=e(o,f),o[a]===f?a:-1;if(f!==f)return a=t(X.call(o,n,u),Br),a>=0?a+n:-1;for(a=r>0?n:u-1;a>=0&&a<u;a+=r)if(o[a]===f)return a;return-1}}var jo=i(()=>{R();_();uo()});var wt,rf=i(()=>{Qo();ge();jo();wt=_t(1,yr,br)});var tf,Pa=i(()=>{Ho();jo();tf=_t(-1,At)});function Ar(r,t,e){var o=y(r)?yr:qr,f=o(r,t,e);if(f!==void 0&&f!==-1)return r[f]}var ef=i(()=>{N();ge();Yo()});function xe(r,t){return Ar(r,U(t))}var Da=i(()=>{ef();st()});function E(r,t,e){t=Z(t,e);var o,f;if(y(r))for(o=0,f=r.length;o<f;o++)t(r[o],o,r);else{var a=s(r);for(o=0,f=a.length;o<f;o++)t(r[a[o]],a[o],r)}return r}var nr=i(()=>{zr();N();k()});function P(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=Array(f),n=0;n<f;n++){var u=o?o[n]:n;a[n]=t(r[u],u,r)}return a}var _r=i(()=>{M();N();k()});function It(r){var t=function(e,o,f,a){var n=!y(e)&&s(e),u=(n||e).length,l=r>0?0:u-1;for(a||(f=e[n?n[l]:l],l+=r);l>=0&&l<u;l+=r){var m=n?n[l]:l;f=o(f,e[m],m,e)}return f};return function(e,o,f,a){var n=arguments.length>=3;return t(e,Z(o,a,4),f,n)}}var of=i(()=>{N();k();zr()});var kt,Fa=i(()=>{of();kt=It(1)});var ye,La=i(()=>{of();ye=It(-1)});function q(r,t,e){var o=[];return t=v(t,e),E(r,function(f,a,n){t(f,a,n)&&o.push(f)}),o}var Wr=i(()=>{M();nr()});function Ae(r,t,e){return q(r,ar(v(t)),e)}var Na=i(()=>{Wr();de();M()});function Et(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=0;a<f;a++){var n=o?o[a]:a;if(!t(r[n],n,r))return!1}return!0}var za=i(()=>{M();N();k()});function St(r,t,e){t=v(t,e);for(var o=!y(r)&&s(r),f=(o||r).length,a=0;a<f;a++){var n=o?o[a]:a;if(t(r[n],n,r))return!0}return!1}var Ra=i(()=>{M();N();k()});function B(r,t,e,o){return y(r)||(r=L(r)),(typeof e!="number"||o)&&(e=0),wt(r,t,e)>=0}var Ur=i(()=>{N();sr();rf()});var ff,Va=i(()=>{D();z();_r();Ht();Lr();ff=d(function(r,t,e){var o,f;return h(t)?f=t:(t=W(t),o=t.slice(0,-1),t=t[t.length-1]),P(r,function(a){var n=f;if(!n){if(o&&o.length&&(a=vr(a,o)),a==null)return;n=a[t]}return n==null?n:n.apply(a,e)})})});function ir(r,t){return P(r,fr(t))}var _e=i(()=>{_r();re()});function we(r,t){return q(r,U(t))}var qa=i(()=>{Wr();st()});function Zr(r,t,e){var o=-1/0,f=-1/0,a,n;if(t==null||typeof t=="number"&&typeof r[0]!="object"&&r!=null){r=y(r)?r:L(r);for(var u=0,l=r.length;u<l;u++)a=r[u],a!=null&&a>o&&(o=a)}else t=v(t,e),E(r,function(m,A,I){n=t(m,A,I),(n>f||n===-1/0&&o===-1/0)&&(o=m,f=n)});return o}var af=i(()=>{N();sr();M();nr()});function Ie(r,t,e){var o=1/0,f=1/0,a,n;if(t==null||typeof t=="number"&&typeof r[0]!="object"&&r!=null){r=y(r)?r:L(r);for(var u=0,l=r.length;u<l;u++)a=r[u],a!=null&&a<o&&(o=a)}else t=v(t,e),E(r,function(m,A,I){n=t(m,A,I),(n<f||n===1/0&&o===1/0)&&(o=m,f=n)});return o}var ba=i(()=>{N();sr();M();nr()});function Kr(r){return r?O(r)?X.call(r):lr(r)?r.match(Kn):y(r)?P(r,or):L(r):[]}var Kn,nf=i(()=>{tr();_();Lt();N();_r();jt();sr();Kn=/[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g});function Xr(r,t,e){if(t==null||e)return y(r)||(r=L(r)),r[gr(r.length-1)];var o=Kr(r),f=g(o);t=Math.max(Math.min(t,f),0);for(var a=f-1,n=0;n<t;n++){var u=gr(n,a),l=o[n];o[n]=o[u],o[u]=l}return o.slice(0,t)}var uf=i(()=>{N();sr();R();Do();nf()});function ke(r){return Xr(r,1/0)}var Wa=i(()=>{uf()});function Ee(r,t,e){var o=0;return t=v(t,e),ir(P(r,function(f,a,n){return{value:f,index:o++,criteria:t(f,a,n)}}).sort(function(f,a){var n=f.criteria,u=a.criteria;if(n!==u){if(n>u||n===void 0)return 1;if(n<u||u===void 0)return-1}return f.index-a.index}),"value")}var Ua=i(()=>{M();_e();_r()});function Q(r,t){return function(e,o,f){var a=t?[[],[]]:{};return o=v(o,f),E(e,function(n,u){var l=o(n,u,e);r(a,n,l)}),a}}var Ct=i(()=>{M();nr()});var lf,Za=i(()=>{Ct();Y();lf=Q(function(r,t,e){C(r,e)?r[e].push(t):r[e]=[t]})});var mf,Ka=i(()=>{Ct();mf=Q(function(r,t,e){r[e]=t})});var pf,Xa=i(()=>{Ct();Y();pf=Q(function(r,t,e){C(r,e)?r[e]++:r[e]=1})});var sf,Ga=i(()=>{Ct();sf=Q(function(r,t,e){r[e?0:1].push(t)},!0)});function Se(r){return r==null?0:y(r)?r.length:s(r).length}var $a=i(()=>{N();k()});function cf(r,t,e){return t in e}var Ya=i(()=>{});var Tt,df=i(()=>{D();z();zr();Pr();Ya();xr();Tt=d(function(r,t){var e={},o=t[0];if(r==null)return e;h(o)?(t.length>1&&(o=Z(o,t[1])),t=b(r)):(o=cf,t=V(t,!1,!1),r=Object(r));for(var f=0,a=t.length;f<a;f++){var n=t[f],u=r[n];o(u,n,r)&&(e[n]=u)}return e})});var vf,Ja=i(()=>{D();z();de();_r();xr();Ur();df();vf=d(function(r,t){var e=t[0],o;return h(e)?(e=ar(e),t.length>1&&(o=t[1])):(t=P(V(t,!1,!1),String),e=function(f,a){return!B(t,a)}),Tt(r,e,o)})});function Gr(r,t,e){return X.call(r,0,Math.max(0,r.length-(t==null||e?1:t)))}var hf=i(()=>{_()});function $r(r,t,e){return r==null||r.length<1?t==null||e?void 0:[]:t==null||e?r[0]:Gr(r,r.length-t)}var Ha=i(()=>{hf()});function ur(r,t,e){return X.call(r,t==null||e?1:t)}var gf=i(()=>{_()});function Ce(r,t,e){return r==null||r.length<1?t==null||e?void 0:[]:t==null||e?r[r.length-1]:ur(r,Math.max(0,r.length-t))}var Qa=i(()=>{gf()});function Te(r){return q(r,Boolean)}var ja=i(()=>{Wr()});function Be(r,t){return V(r,t,!1)}var rn=i(()=>{xr()});var Bt,xf=i(()=>{D();xr();Wr();Ur();Bt=d(function(r,t){return t=V(t,!0,!0),q(r,function(e){return!B(t,e)})})});var yf,tn=i(()=>{D();xf();yf=d(function(r,t){return Bt(r,t)})});function wr(r,t,e,o){Sr(t)||(o=e,e=t,t=!1),e!=null&&(e=v(e,o));for(var f=[],a=[],n=0,u=g(r);n<u;n++){var l=r[n],m=e?e(l,n,r):l;t&&!e?((!n||a!==m)&&f.push(l),a=m):e?B(a,m)||(a.push(m),f.push(l)):B(f,l)||f.push(l)}return f}var Af=i(()=>{je();M();R();Ur()});var _f,en=i(()=>{D();Af();xr();_f=d(function(r){return wr(V(r,!0,!0))})});function Oe(r){for(var t=[],e=arguments.length,o=0,f=g(r);o<f;o++){var a=r[o];if(!B(t,a)){var n;for(n=1;n<e&&B(arguments[n],a);n++);n===e&&t.push(a)}}return t}var on=i(()=>{R();Ur()});function Ir(r){for(var t=r&&Zr(r,g).length||0,e=Array(t),o=0;o<t;o++)e[o]=ir(r,o);return e}var wf=i(()=>{af();R();_e()});var If,fn=i(()=>{D();wf();If=d(Ir)});function Me(r,t){for(var e={},o=0,f=g(r);o<f;o++)t?e[r[o]]=t[o]:e[r[o][0]]=r[o][1];return e}var an=i(()=>{R()});function Pe(r,t,e){t==null&&(t=r||0,r=0),e||(e=t<r?-1:1);for(var o=Math.max(Math.ceil((t-r)/e),0),f=Array(o),a=0;a<o;a++,r+=e)f[a]=r;return f}var nn=i(()=>{});function De(r,t){if(t==null||t<1)return[];for(var e=[],o=0,f=r.length;o<f;)e.push(X.call(r,o,o+=t));return e}var un=i(()=>{_()});function Yr(r,t){return r._chain?p(t).chain():t}var kf=i(()=>{F()});function Jr(r){return E(cr(r),function(t){var e=p[t]=r[t];p.prototype[t]=function(){var o=[this._wrapped];return Pf.apply(o,arguments),Yr(this,e.apply(p,o))}}),p}var ln=i(()=>{F();nr();ko();_();kf()});var mn,pn=i(()=>{F();nr();_();kf();E(["pop","push","reverse","shift","sort","splice","unshift"],function(r){var t=rt[r];p.prototype[r]=function(){var e=this._wrapped;return e!=null&&(t.apply(e,arguments),(r==="shift"||r==="splice")&&e.length===0&&delete e[0]),Yr(this,e)}});E(["concat","join","slice"],function(r){var t=rt[r];p.prototype[r]=function(){var e=this._wrapped;return e!=null&&(e=t.apply(e,arguments)),Yr(this,e)}});mn=p});var Ef={};Mf(Ef,{VERSION:()=>jr,after:()=>he,all:()=>Et,allKeys:()=>b,any:()=>St,assign:()=>er,before:()=>Vr,bind:()=>gt,bindAll:()=>Zo,chain:()=>le,chunk:()=>De,clone:()=>Yt,collect:()=>P,compact:()=>Te,compose:()=>ve,constant:()=>Or,contains:()=>B,countBy:()=>pf,create:()=>$t,debounce:()=>se,default:()=>mn,defaults:()=>lt,defer:()=>Xo,delay:()=>xt,detect:()=>Ar,difference:()=>Bt,drop:()=>ur,each:()=>E,escape:()=>No,every:()=>Et,extend:()=>ut,extendOwn:()=>er,filter:()=>q,find:()=>Ar,findIndex:()=>yr,findKey:()=>qr,findLastIndex:()=>At,findWhere:()=>xe,first:()=>$r,flatten:()=>Be,foldl:()=>kt,foldr:()=>ye,forEach:()=>E,functions:()=>cr,get:()=>Nr,groupBy:()=>lf,has:()=>Qt,head:()=>$r,identity:()=>or,include:()=>B,includes:()=>B,indexBy:()=>mf,indexOf:()=>wt,initial:()=>Gr,inject:()=>kt,intersection:()=>Oe,invert:()=>Fr,invoke:()=>ff,isArguments:()=>mr,isArray:()=>O,isArrayBuffer:()=>ot,isBoolean:()=>Sr,isDataView:()=>rr,isDate:()=>to,isElement:()=>Ft,isEmpty:()=>bt,isEqual:()=>Ut,isError:()=>oo,isFinite:()=>Vt,isFunction:()=>h,isMap:()=>yo,isMatch:()=>Mr,isNaN:()=>Br,isNull:()=>Dt,isNumber:()=>tt,isObject:()=>T,isRegExp:()=>eo,isSet:()=>_o,isString:()=>lr,isSymbol:()=>et,isTypedArray:()=>nt,isUndefined:()=>Er,isWeakMap:()=>Ao,isWeakSet:()=>wo,iteratee:()=>hr,keys:()=>s,last:()=>Ce,lastIndexOf:()=>tf,map:()=>P,mapObject:()=>te,matcher:()=>U,matches:()=>U,max:()=>Zr,memoize:()=>me,methods:()=>cr,min:()=>Ie,mixin:()=>Jr,negate:()=>ar,noop:()=>Rr,now:()=>J,object:()=>Me,omit:()=>vf,once:()=>$o,pairs:()=>Kt,partial:()=>H,partition:()=>sf,pick:()=>Tt,pluck:()=>ir,property:()=>fr,propertyOf:()=>ee,random:()=>gr,range:()=>Pe,reduce:()=>kt,reduceRight:()=>ye,reject:()=>Ae,rest:()=>ur,restArguments:()=>d,result:()=>ie,sample:()=>Xr,select:()=>q,shuffle:()=>ke,size:()=>Se,some:()=>St,sortBy:()=>Ee,sortedIndex:()=>br,tail:()=>ur,take:()=>$r,tap:()=>Jt,template:()=>ne,templateSettings:()=>Ro,throttle:()=>pe,times:()=>oe,toArray:()=>Kr,toPath:()=>pt,transpose:()=>Ir,unescape:()=>zo,union:()=>_f,uniq:()=>wr,unique:()=>wr,uniqueId:()=>ue,unzip:()=>Ir,values:()=>L,where:()=>we,without:()=>yf,wrap:()=>ce,zip:()=>If});var Fe=i(()=>{_();D();j();Vf();Qe();je();qf();Lt();ro();bf();Wf();Uf();fo();ao();zt();tr();z();Rt();Xf();uo();so();Yf();vo();Qf();oa();fa();aa();na();k();Pr();sr();ia();Io();ko();Eo();Gt();So();ua();la();ma();Bo();pa();sa();jt();lo();Po();To();re();ca();st();da();Do();fe();va();xa();Vo();ya();Aa();_a();wa();Mo();ht();Uo();Ia();ka();Ko();Ea();Sa();Ca();Ta();de();Ba();Oa();Go();Ma();Yo();ge();Ho();Qo();rf();Pa();ef();Da();nr();_r();Fa();La();Wr();Na();za();Ra();Ur();Va();_e();qa();af();ba();Wa();uf();Ua();Za();Ka();Xa();Ga();nf();$a();df();Ja();Ha();hf();Qa();gf();ja();rn();tn();Af();en();on();xf();wf();fn();an();nn();un();ln();pn()});var Sf,sn,cn=i(()=>{Fe();Fe();Sf=Jr(Ef);Sf._=Sf;sn=Sf});var Le={};Mf(Le,{VERSION:()=>jr,after:()=>he,all:()=>Et,allKeys:()=>b,any:()=>St,assign:()=>er,before:()=>Vr,bind:()=>gt,bindAll:()=>Zo,chain:()=>le,chunk:()=>De,clone:()=>Yt,collect:()=>P,compact:()=>Te,compose:()=>ve,constant:()=>Or,contains:()=>B,countBy:()=>pf,create:()=>$t,debounce:()=>se,default:()=>sn,defaults:()=>lt,defer:()=>Xo,delay:()=>xt,detect:()=>Ar,difference:()=>Bt,drop:()=>ur,each:()=>E,escape:()=>No,every:()=>Et,extend:()=>ut,extendOwn:()=>er,filter:()=>q,find:()=>Ar,findIndex:()=>yr,findKey:()=>qr,findLastIndex:()=>At,findWhere:()=>xe,first:()=>$r,flatten:()=>Be,foldl:()=>kt,foldr:()=>ye,forEach:()=>E,functions:()=>cr,get:()=>Nr,groupBy:()=>lf,has:()=>Qt,head:()=>$r,identity:()=>or,include:()=>B,includes:()=>B,indexBy:()=>mf,indexOf:()=>wt,initial:()=>Gr,inject:()=>kt,intersection:()=>Oe,invert:()=>Fr,invoke:()=>ff,isArguments:()=>mr,isArray:()=>O,isArrayBuffer:()=>ot,isBoolean:()=>Sr,isDataView:()=>rr,isDate:()=>to,isElement:()=>Ft,isEmpty:()=>bt,isEqual:()=>Ut,isError:()=>oo,isFinite:()=>Vt,isFunction:()=>h,isMap:()=>yo,isMatch:()=>Mr,isNaN:()=>Br,isNull:()=>Dt,isNumber:()=>tt,isObject:()=>T,isRegExp:()=>eo,isSet:()=>_o,isString:()=>lr,isSymbol:()=>et,isTypedArray:()=>nt,isUndefined:()=>Er,isWeakMap:()=>Ao,isWeakSet:()=>wo,iteratee:()=>hr,keys:()=>s,last:()=>Ce,lastIndexOf:()=>tf,map:()=>P,mapObject:()=>te,matcher:()=>U,matches:()=>U,max:()=>Zr,memoize:()=>me,methods:()=>cr,min:()=>Ie,mixin:()=>Jr,negate:()=>ar,noop:()=>Rr,now:()=>J,object:()=>Me,omit:()=>vf,once:()=>$o,pairs:()=>Kt,partial:()=>H,partition:()=>sf,pick:()=>Tt,pluck:()=>ir,property:()=>fr,propertyOf:()=>ee,random:()=>gr,range:()=>Pe,reduce:()=>kt,reduceRight:()=>ye,reject:()=>Ae,rest:()=>ur,restArguments:()=>d,result:()=>ie,sample:()=>Xr,select:()=>q,shuffle:()=>ke,size:()=>Se,some:()=>St,sortBy:()=>Ee,sortedIndex:()=>br,tail:()=>ur,take:()=>$r,tap:()=>Jt,template:()=>ne,templateSettings:()=>Ro,throttle:()=>pe,times:()=>oe,toArray:()=>Kr,toPath:()=>pt,transpose:()=>Ir,unescape:()=>zo,union:()=>_f,uniq:()=>wr,unique:()=>wr,uniqueId:()=>ue,unzip:()=>Ir,values:()=>L,where:()=>we,without:()=>yf,wrap:()=>ce,zip:()=>If});var Ne=i(()=>{cn();Fe()});var vn=Qr((pg,dn)=>{"use strict";dn.exports={asc_char:[4,0,2,6,3,5,1,9,8,7,1,2,0,6,4,8,2,9,5,3,0,1,3,7,4,6,8,9,2,0,5,1,9,4,3,8,6,7,1,2,4,3,9,5,7,8,3,0,2,1,4,0,9,1,7,0,2,4,6,3,7,1,9,5,8],asc_bit:[8,1,256,2048,2,4096,256,2048,1024,64,16,4096,4,128,512,64,128,512,4,256,16,1,4096,128,1024,512,1,128,1024,32,128,512,64,256,4,4096,2,16,4,1,2,32,16,64,4096,2,1,512,16,128,32,1024,4,64,512,2048,4,4096,64,128,32,2048,1,8,4],desc_char:[7,1,9,5,8,0,2,4,6,3,5,8,9,7,3,0,6,1,7,4,6,8,9,2,5,1,7,5,4,3,8,7,6,0,2,5,4,9,3,0,1,6,8,2,0,4,5,9,6,7,5,2,6,3,8,5,1,9,8,7,4,0,2,6,3],desc_bit:[4,1024,4096,32,512,2,32,16,8,512,2048,32,1024,2,64,8,16,2,1024,1,4,2048,256,64,2,4096,8,256,64,16,16,2048,1,64,2,512,2048,32,8,128,8,1024,128,2048,256,4,1024,8,32,256,1,8,4096,2048,256,16,32,2,8,1,128,4096,512,256,1024]}});var Bf=Qr((cg,hn)=>{"use strict";var sg=(Ne(),Ze(Le)),Ve=vn(),ze=Ve.asc_bit,Re=Ve.asc_char,Cf=Ve.desc_bit,Tf=Ve.desc_char,w={encode_table:new Array(1365),decode_table:new Array(8192),fcs_table:new Array(8192),buildCodeWords:function(t,e,o){for(var f=0;f<8192;f++){for(var a=0,n=0,u=f,l=0;l<13;l++)a+=u&1,n=n<<1|u&1,u>>=1;a===t&&(f===n?(w.encode_table[o]=f,w.decode_table[f]=o,w.decode_table[f^8191]=o,w.fcs_table[f]=0,w.fcs_table[f^8191]=1,o--):f<n&&(w.encode_table[e]=f,w.decode_table[f]=e,w.decode_table[f^8191]=e,w.fcs_table[f]=0,w.fcs_table[f^8191]=1,e++,w.encode_table[e]=n,w.decode_table[n]=e,w.decode_table[n^8191]=e,w.fcs_table[n]=0,w.fcs_table[n^8191]=1,e++))}},cleanString:function(t){return t==null&&(t=""),t.toUpperCase().replace(/\s/g,"")},isZero:function(t){for(var e=t.length-1;e>=0;e--)if(t[e]!==0)return!1;return!0},add:function(r,t){for(var e=r.length-1;e>=0&&t!==0;e--){var o=r[e]+t;t=o>>11,r[e]=o&2047}},multiplyAndAdd:function(t,e,o){for(var f=t.length-1;f>=0;f--){var a=t[f]*e+o;o=a>>11,t[f]=a&2047}},divideModulus:function(t,e){for(var o=0,f=t.length,a,n=0;n<f;n++){var u=t[n]+(o<<11);t[n]=a=Math.floor(u/e),o=u-a*e}return o},calculateFrameCheck:function(t){for(var e=496,o=t.length,f=0;f<o;f++){e^=t[f];for(var a=0;a<11;a++)e<<=1,e&2048&&(e^=3893)}return e},charactersToText:function(t){for(var e="",o=0;o<65;o++)t[Tf[o]]&Cf[o]?t[Re[o]]&ze[o]?e+="F":e+="D":t[Re[o]]&ze[o]?e+="A":e+="T";return e},textToCharacters:function(t,e){t=w.cleanString(t);var o=[0,0,0,0,0,0,0,0,0,0],f;for(f=0;f<65;f++)switch(t.charAt(f)){case"T":case"S":break;case"D":o[Tf[f]]|=Cf[f];break;case"A":o[Re[f]]|=ze[f];break;case"F":o[Tf[f]]|=Cf[f],o[Re[f]]|=ze[f];break;default:if(e)return null}return o},showBarCode:function(t){var e=document.getElementById("row0").cells,o=document.getElementById("row1").cells,f=document.getElementById("row2").cells,a=t.length;a>65&&(a=65);for(var n=0;n<a;n++){var u=2*n;switch(t.charAt(n)){case"A":e[u].style.backgroundColor="#000",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="transparent";break;case"D":e[u].style.backgroundColor="transparent",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="#000";break;case"F":e[u].style.backgroundColor="#000",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="#000";break;case"T":case"S":e[u].style.backgroundColor="transparent",o[u].style.backgroundColor="#000",f[u].style.backgroundColor="transparent";break;default:e[u].style.backgroundColor="#f00",o[u].style.backgroundColor="#f00",f[u].style.backgroundColor="#f00";break}}for(var l=a;l<65;l++){var m=2*l;e[m].style.backgroundColor="transparent",o[m].style.backgroundColor="#ccc",f[m].style.backgroundColor="transparent"}return t.length}};w.buildCodeWords(5,0,1286);w.buildCodeWords(2,1287,1364);hn.exports=w});var yn=Qr((dg,xn)=>{"use strict";var Xn=(Ne(),Ze(Le)),kr=Bf(),Gn=kr.encode_table,$n=kr.add,gn=kr.divideModulus,K=kr.multiplyAndAdd,Yn=kr.charactersToText,Jn=kr.calculateFrameCheck,Hn=kr.cleanString;xn.exports=function(t,e){var o=Qn(t);if(o){if(console.error("Encode Error",o),e)return e(o);throw new Error(o)}return jn(t,e)};function Qn(r,t){if(Xn.mapObject(r,Hn),r.zip){if(!e(r.zip,5))return"Zip code must be 5 digits"}else r.zip="";if(r.plus4){if(r.zip==="")return"Zip code is required if Zip Code plus4 is provided";if(!e(r.plus4,4))return"plus4 must be 4 digits"}else r.plus4="";if(r.delivery_pt){if(!e(r.delivery_pt,2))return"Delivery Point must be 2 digits"}else r.delivery_pt="";if(!e(r.barcode_id,2))return"Barcode ID must be 2 digits";if(r.barcode_id.charAt(1)>="5")return"Second digit of Barcode ID must be 0-4";if(!e(r.service_type,3))return"Service Type must be 3 digits";if(!e(r.mailer_id,6,9))return"Mailer ID must be 6 or 9 digits";if(!e(r.serial_num)||r.mailer_id.length+r.serial_num.length!==15)return"Mailer ID and Serial Number together must be 15 digits";function e(o,f,a){return/\D/.test(o)?!1:!f||o.length===f||o.length===a}return null}function jn(r,t){var e,o=[0,0,0,0,0,0,0,0,0,0],f=0;r.zip!==""&&(o[9]=parseInt(r.zip,10),f+=1),r.plus4!==""&&(K(o,1e4,parseInt(r.plus4,10)),f+=1e5),r.delivery_pt!==""&&(K(o,100,parseInt(r.delivery_pt,10)),f+=1e9),$n(o,f),K(o,10,parseInt(r.barcode_id.charAt(0),10)),K(o,5,parseInt(r.barcode_id.charAt(1),10)),K(o,1e3,parseInt(r.service_type,10)),r.mailer_id.length===6?(K(o,1e6,parseInt(r.mailer_id,10)),K(o,1e5,0),K(o,1e4,parseInt(r.serial_num,10))):(K(o,1e4,0),K(o,1e5,parseInt(r.mailer_id,10)),K(o,1e6,parseInt(r.serial_num,10)));var a=Jn(o),n=new Array(10);for(n[9]=gn(o,636)<<1,e=8;e>0;e--)n[e]=gn(o,1365);n[0]=o[8]<<11|o[9],a&1024&&(n[0]+=659);var u=new Array(10);for(e=0;e<10;e++)u[e]=Gn[n[e]],a&1<<e&&(u[e]^=8191);var l=Yn(u);return t?t(null,l):l}});var Cn=Qr((vg,Sn)=>{"use strict";var ri=(Ne(),Ze(Le)),G=Bf(),We=G.decode_table,ti=G.fcs_table,An=G.isZero,ei=G.add,qe=G.divideModulus,_n=G.multiplyAndAdd,oi=G.charactersToText,be=G.textToCharacters,fi=G.calculateFrameCheck,ai=G.cleanString;Sn.exports=function(t,e){if(e)return wn(t,e);var o=wn(t);return e?e(null,o):o};function wn(r,t){var e,o;if(r=ai(r),r.length===65&&(e=be(r,!0),e&&(o=kn(e),o)))return t?t(null,o):o;if(r=ii(r),r.length!==65){if(t)return t("Barcode must be 65 characters long");throw new Error("Barcode must be 65 characters long")}if(e=be(r,!1),o=In(e),o)return o.suggest&&(o.highlight=ui(r,o.suggest)),o;if(r=ni(r),e=be(r,!1),o=In(e),o&&o.barcode_id){if(t)return t("Barcode seems to be upside down");throw new Error("Barcode seems to be upside down")}if(t)return t("Invalid barcode");throw new Error("Invalid barcode")}function kn(r){for(var t=0,e=new Array(10),o=0;o<10;o++){if(e[o]=We[r[o]],e[o]===void 0)return null;t|=ti[r[o]]<<o}if(!(e[0]>1317||e[9]>1270)){if(e[9]&1)return null;e[9]>>=1,e[0]>658&&(e[0]-=659,t|=1024);for(var f=[0,0,0,0,0,0,0,0,0,e[0]],a=1;a<9;a++)_n(f,1365,e[a]);if(_n(f,636,e[9]),fi(f)!==t)return null;for(var n=new Array(20),u=19;u>=2;u--)n[u]=qe(f,10);n[1]=qe(f,5),n[0]=qe(f,10);var l,m=11,A=new Array(11);for(l=5;l>=2;l--)if(l!==3){if(An(f))break;ei(f,-1);for(var I=0;I<l;I++)A[--m]=qe(f,10)}if(l<2&&!An(f))return null;var x={};return x.barcode_id=n.slice(0,2).join(""),x.service_type=n.slice(2,5).join(""),n[5]===9?(x.mailer_id=n.slice(5,14).join(""),x.serial_num=n.slice(14,20).join("")):(x.mailer_id=n.slice(5,11).join(""),x.serial_num=n.slice(11,20).join("")),m<=6&&(x.zip=A.slice(m,m+5).join("")),m<=2&&(x.plus4=A.slice(m+5,m+9).join("")),m===0&&(x.delivery_pt=A.slice(9,11).join("")),x}}function En(r,t,e){for(var o=null,f,a=0;a<r[e].length;a++)if(t[e]=r[e][a],e<9?f=En(r,t,e+1):(f=kn(t),f&&(f.suggest=oi(t),f.message="Damaged barcode")),f){if(o)return{message:"Invalid barcode"};o=f}return o}function In(r){for(var t=1,e=new Array(10),o=0;o<10;o++){e[o]=[];var f=r[o];if(We[f]===void 0)for(var a=0;a<13;a++){var n=f^1<<a;We[n]!==void 0&&e[o].push(n)}else e[o].push(f);if(t*=e[o].length,t===0||t>1e3)return null}var u=new Array(10);return En(e,u,0)}function ni(r){return ri.map(r,function(t){switch(t){case"A":return"D";case"D":return"A";default:return t}}).join("")}function ii(r){var t;if(r.length===64)t=!0;else if(r.length===66)t=!1;else return r;for(var e,o,f=r,a=5,n=0;n<66;n++){o=t?r.substring(0,n)+"X"+r.substring(n):r.substring(0,n)+r.substring(n+1);var u=be(o,!1);e=0;for(var l=0;l<10;l++)We[u[l]]===void 0&&e++;e<a&&(a=e,f=o)}return f}function ui(r,t){for(var e=Math.min(r.length,t.length),o=new Array(e),f=0;f<e;f++)o[f]=r.charAt(f)!==t.charAt(f);return o}});var Tn=Qr(Of=>{"use strict";Of.encode=yn();Of.decode=Cn()});var li=Tn();window.IMB=li;})();
 
-/* ============================================================== */
+/* ===== barcode location and bar reading ===== */
+/* Locate and read a USPS Intelligent Mail barcode in an ordinary photo.
+   Coarse to fine: find the barcode's region on a downscaled copy, then
+   read the bars from the full resolution crop. */
+
+function toGray(data, W, H){
+  const g = new Uint8Array(W*H);
+  for (let i=0,p=0;i<data.length;i+=4,p++)
+    g[p] = (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114) | 0;
+  return g;
+}
+function downscale(gray, W, H, f){
+  const nw = Math.max(1, Math.round(W/f)), nh = Math.max(1, Math.round(H/f));
+  const out = new Uint8Array(nw*nh);
+  for (let y=0;y<nh;y++){
+    const sy0=(y*f)|0, sy1=Math.min(H,((y+1)*f)|0)||sy0+1;
+    for (let x=0;x<nw;x++){
+      const sx0=(x*f)|0, sx1=Math.min(W,((x+1)*f)|0)||sx0+1;
+      let s=0,c=0;
+      for (let yy=sy0;yy<sy1;yy++) for (let xx=sx0;xx<sx1;xx++){ s+=gray[yy*W+xx]; c++; }
+      out[y*nw+x] = c ? (s/c)|0 : 0;
+    }
+  }
+  return {g:out, W:nw, H:nh};
+}
+// local mean threshold via integral image: immune to lighting gradients
+function adaptive(gray, W, H, blk, C){
+  const IW = W+1;
+  const I = new Float64Array(IW*(H+1));
+  for (let y=0;y<H;y++){
+    let rs=0;
+    for (let x=0;x<W;x++){ rs += gray[y*W+x]; I[(y+1)*IW+(x+1)] = I[y*IW+(x+1)] + rs; }
+  }
+  const r = blk>>1, bin = new Uint8Array(W*H);
+  for (let y=0;y<H;y++){
+    const y0=Math.max(0,y-r), y1=Math.min(H-1,y+r);
+    for (let x=0;x<W;x++){
+      const x0=Math.max(0,x-r), x1=Math.min(W-1,x+r);
+      const s = I[(y1+1)*IW+(x1+1)] - I[y0*IW+(x1+1)] - I[(y1+1)*IW+x0] + I[y0*IW+x0];
+      bin[y*W+x] = gray[y*W+x] < (s/((x1-x0+1)*(y1-y0+1))) - C ? 1 : 0;
+    }
+  }
+  return bin;
+}
+// widen every dark pixel sideways so a row of bars becomes one solid band
+function dilateH(bin, W, H, kw){
+  const r = kw>>1, out = new Uint8Array(W*H);
+  for (let y=0;y<H;y++){
+    const row=y*W; let cnt=0;
+    for (let x=0;x<=Math.min(W-1,r);x++) cnt += bin[row+x];
+    for (let x=0;x<W;x++){
+      out[row+x] = cnt>0 ? 1 : 0;
+      const add=x+r+1, rem=x-r;
+      if (add<W) cnt += bin[row+add];
+      if (rem>=0) cnt -= bin[row+rem];
+    }
+  }
+  return out;
+}
+function components(bin, W, H, minArea){
+  const label = new Int32Array(W*H), stack = new Int32Array(W*H), out = [];
+  let cur = 0;
+  for (let p=0;p<W*H;p++){
+    if (!bin[p] || label[p]) continue;
+    cur++;
+    let sp=0; stack[sp++]=p; label[p]=cur;
+    let minx=W,maxx=0,miny=H,maxy=0,area=0,sumx=0,sumy=0;
+    while (sp){
+      const q=stack[--sp], qx=q%W, qy=(q/W)|0;
+      area++; sumx+=qx; sumy+=qy;
+      if(qx<minx)minx=qx; if(qx>maxx)maxx=qx; if(qy<miny)miny=qy; if(qy>maxy)maxy=qy;
+      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
+        if(!dx&&!dy) continue;
+        const nx=qx+dx, ny=qy+dy;
+        if(nx<0||ny<0||nx>=W||ny>=H) continue;
+        const np=ny*W+nx;
+        if(bin[np] && !label[np]){ label[np]=cur; stack[sp++]=np; }
+      }
+    }
+    if (area >= (minArea||1))
+      out.push({x:minx,y:miny,w:maxx-minx+1,h:maxy-miny+1,area:area,cx:sumx/area,cy:sumy/area});
+  }
+  return out;
+}
+const median = a => { const s=[...a].sort((p,q)=>p-q); return s[s.length>>1]; };
+function quadFit(xs, ys){
+  let s0=xs.length,s1=0,s2=0,s3=0,s4=0,t0=0,t1=0,t2=0;
+  for (let i=0;i<xs.length;i++){ const x=xs[i],y=ys[i],x2=x*x;
+    s1+=x; s2+=x2; s3+=x2*x; s4+=x2*x2; t0+=y; t1+=x*y; t2+=x2*y; }
+  const A=[[s0,s1,s2],[s1,s2,s3],[s2,s3,s4]], b=[t0,t1,t2];
+  for (let i=0;i<3;i++){
+    let piv=i; for(let r=i+1;r<3;r++) if(Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
+    [A[i],A[piv]]=[A[piv],A[i]]; [b[i],b[piv]]=[b[piv],b[i]];
+    if(Math.abs(A[i][i])<1e-9) return null;
+    for(let r=i+1;r<3;r++){ const f=A[r][i]/A[i][i];
+      for(let c=i;c<3;c++) A[r][c]-=f*A[i][c]; b[r]-=f*b[i]; }
+  }
+  const c=[0,0,0];
+  for(let i=2;i>=0;i--){ let s=b[i]; for(let j=i+1;j<3;j++) s-=A[i][j]*c[j]; c[i]=s/A[i][i]; }
+  return c;
+}
+// turn one candidate crop into a 65 character A/F/T/D string
+function barsFromCrop(gray, W, H, rx, ry, rw, rh){
+  const pad = Math.max(6, rh>>1);
+  const x0=Math.max(0,rx-pad), y0=Math.max(0,ry-pad);
+  const x1=Math.min(W,rx+rw+pad), y1=Math.min(H,ry+rh+pad);
+  const cw=x1-x0, ch=y1-y0;
+  if (cw<40 || ch<10) return {count:0};
+  const crop = new Uint8Array(cw*ch);
+  for (let y=0;y<ch;y++) for (let x=0;x<cw;x++) crop[y*cw+x] = gray[(y0+y)*W + (x0+x)];
+  const blk = Math.max(15, (Math.round(ch*1.4)|1));
+  const bin = adaptive(crop, cw, ch, blk, 10);
+
+  let cs = components(bin, cw, ch, 6).filter(c => c.h > c.w);
+  if (!cs.length) return {count:0};
+  const mw = median(cs.map(c=>c.w)), ma = median(cs.map(c=>c.area));
+  cs = cs.filter(c => c.area >= Math.max(8, ma*0.15) && c.w <= mw*3);
+  cs.sort((a,b)=>a.cx-b.cx);
+  if (cs.length !== 65) return {count:cs.length};
+
+  const hs = cs.map(c=>c.h).sort((a,b)=>a-b);
+  const lo=hs[Math.floor(hs.length*0.20)], hi=hs[Math.floor(hs.length*0.80)];
+  const mids=cs.map(c=>c.h).filter(h=>h>lo&&h<=hi);
+  const talls=cs.map(c=>c.h).filter(h=>h>hi);
+  const shorts=cs.map(c=>c.h).filter(h=>h<lo);
+  if (!mids.length || !talls.length || !shorts.length) return {count:65, tiers:false};
+  const tF=(median(talls)+median(mids))/2, tT=(median(shorts)+median(mids))/2;
+  const co = quadFit(cs.map(c=>c.cx), cs.map(c=>c.cy));
+  if (!co) return {count:65, tiers:false};
+  let out="";
+  for (const c of cs){
+    const base = co[0] + co[1]*c.cx + co[2]*c.cx*c.cx;
+    out += c.h>=tF ? "F" : (c.h<=tT ? "T" : (c.cy<base ? "A" : "D"));
+  }
+  return {count:65, bars:out};
+}
+// full pipeline: returns every plausible bar string, best candidates first
+function findBarcodes(data, W, H){
+  const gray = toGray(data, W, H);
+  const f = Math.max(1, Math.min(W,H) / 900);
+  const small = downscale(gray, W, H, f);
+  const blk = Math.max(15, ((Math.min(small.W,small.H)/20)|0)|1);
+  const sbin = adaptive(small.g, small.W, small.H, blk, 10);
+
+  const regions = [];
+  for (const kw of [9,13,17,21]){
+    const dil = dilateH(sbin, small.W, small.H, kw);
+    for (const c of components(dil, small.W, small.H, 40)){
+      if (c.w < small.W*0.06) continue;
+      if (c.h < 4 || c.h > small.H*0.3) continue;
+      if (c.w / c.h < 3.5) continue;
+      regions.push({x:c.x*f, y:c.y*f, w:c.w*f, h:c.h*f, score:c.w});
+    }
+  }
+  regions.sort((a,b)=>b.score-a.score);
+  // drop near duplicates from the different kernel widths
+  const uniq = [];
+  for (const r of regions){
+    if (!uniq.some(u => Math.abs(u.x-r.x)<r.w*0.2 && Math.abs(u.y-r.y)<Math.max(8,r.h))) uniq.push(r);
+  }
+  const results = [], counts = [];
+  for (const r of uniq.slice(0,8)){
+    const got = barsFromCrop(gray, W, H, Math.round(r.x), Math.round(r.y), Math.round(r.w), Math.round(r.h));
+    if (got.bars) results.push(got.bars);
+    else counts.push(got.count);
+  }
+  return {bars:results, counts:counts, regions:uniq.length};
+}
+
+
+/* =============================================================== */
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -142,7 +334,6 @@ const store = {
   set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
 };
 
-/* ---------- service type table ---------- */
 const STID_BUILTIN = {
   "040": ["First-Class Mail, basic, destination IMb tracing", "outbound"],
   "042": ["Standard Mail, basic, destination IMb tracing", "outbound"],
@@ -188,187 +379,70 @@ function renderStidList(){
     (t[c].added?' <span class="badge unk">YOURS</span>':'')+'</td></tr>').join('') + '</tbody></table>';
 }
 
-/* ---------- image to 65 bars ----------
-   An IMb is 65 evenly spaced bars. Every bar occupies the middle tracker
-   band; an ascender also reaches up, a descender also reaches down, a full
-   bar does both. So height sorts the bars into three tiers and position
-   relative to the barcode's own baseline separates ascenders from
-   descenders. The paper is rarely flat, so the baseline is fitted as a
-   curve across the whole barcode rather than assumed level.            */
-function otsu(gray){
-  const hist = new Array(256).fill(0);
-  for (let i=0;i<gray.length;i++) hist[gray[i]]++;
-  const total = gray.length;
-  let sum = 0; for (let i=0;i<256;i++) sum += i*hist[i];
-  let sumB=0, wB=0, best=0, thr=128;
-  for (let i=0;i<256;i++){
-    wB += hist[i]; if (!wB) continue;
-    const wF = total - wB; if (!wF) break;
-    sumB += i*hist[i];
-    const mB = sumB/wB, mF = (sum-sumB)/wF;
-    const between = wB*wF*(mB-mF)*(mB-mF);
-    if (between > best){ best = between; thr = i; }
+/* decode whichever candidate the barcode's own checksum accepts */
+function decodeAny(barStrings){
+  for (const b of barStrings){
+    let hit = null;
+    window.IMB.decode(b, (err, fields) => { if (!err) hit = {fields:fields, bars:b}; });
+    if (hit) return hit;
   }
-  return thr;
+  return null;
 }
 
-function components(bin, W, H){
-  const label = new Int32Array(W*H);
-  const out = [];
-  const stack = new Int32Array(W*H);
-  let cur = 0;
-  for (let p=0;p<W*H;p++){
-    if (!bin[p] || label[p]) continue;
-    cur++;
-    let sp=0; stack[sp++]=p; label[p]=cur;
-    let minx=W, maxx=0, miny=H, maxy=0, area=0, sumx=0, sumy=0;
-    while (sp){
-      const q = stack[--sp];
-      const qx = q % W, qy = (q / W) | 0;
-      area++; sumx += qx; sumy += qy;
-      if (qx<minx) minx=qx; if (qx>maxx) maxx=qx;
-      if (qy<miny) miny=qy; if (qy>maxy) maxy=qy;
-      for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
-        if (!dx && !dy) continue;
-        const nx = qx+dx, ny = qy+dy;
-        if (nx<0||ny<0||nx>=W||ny>=H) continue;
-        const np = ny*W+nx;
-        if (bin[np] && !label[np]){ label[np]=cur; stack[sp++]=np; }
-      }
-    }
-    out.push({x:minx, y:miny, w:maxx-minx+1, h:maxy-miny+1, area:area, cx:sumx/area, cy:sumy/area});
-  }
-  return out;
-}
-
-// least squares quadratic, so a curled envelope does not fool the A/D split
-function quadFit(xs, ys){
-  let s0=xs.length, s1=0,s2=0,s3=0,s4=0, t0=0,t1=0,t2=0;
-  for (let i=0;i<xs.length;i++){
-    const x=xs[i], y=ys[i], x2=x*x;
-    s1+=x; s2+=x2; s3+=x2*x; s4+=x2*x2;
-    t0+=y; t1+=x*y; t2+=x2*y;
-  }
-  const A=[[s0,s1,s2],[s1,s2,s3],[s2,s3,s4]], b=[t0,t1,t2];
-  for (let i=0;i<3;i++){
-    let piv=i; for (let r=i+1;r<3;r++) if (Math.abs(A[r][i])>Math.abs(A[piv][i])) piv=r;
-    [A[i],A[piv]]=[A[piv],A[i]]; [b[i],b[piv]]=[b[piv],b[i]];
-    if (Math.abs(A[i][i]) < 1e-9) return null;
-    for (let r=i+1;r<3;r++){
-      const f = A[r][i]/A[i][i];
-      for (let c=i;c<3;c++) A[r][c]-=f*A[i][c];
-      b[r]-=f*b[i];
-    }
-  }
-  const c=[0,0,0];
-  for (let i=2;i>=0;i--){
-    let s=b[i]; for (let j=i+1;j<3;j++) s-=A[i][j]*c[j];
-    c[i]=s/A[i][i];
-  }
-  return c; // y = c0 + c1 x + c2 x^2
-}
-const median = a => { const s=[...a].sort((p,q)=>p-q); return s[s.length>>1]; };
-
-function barsFromImage(canvas){
-  const W = canvas.width, H = canvas.height;
-  const d = canvas.getContext("2d", {willReadFrequently:true}).getImageData(0,0,W,H).data;
-  const gray = new Uint8Array(W*H);
-  for (let i=0,p=0;i<d.length;i+=4,p++)
-    gray[p] = (d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114) | 0;
-
-  const thr = otsu(gray);
-  const bin = new Uint8Array(W*H);
-  for (let p=0;p<gray.length;p++) bin[p] = gray[p] < thr ? 1 : 0;
-
-  let comps = components(bin, W, H);
-  if (comps.length < 10) return {error:"Found almost nothing dark in that photo. Get closer and make sure the barcode is in frame."};
-
-  // bars are narrow and tall-ish; drop specks and large blobs
-  const medArea = median(comps.map(c=>c.area));
-  const medW = median(comps.map(c=>c.w));
-  comps = comps.filter(c => c.area >= Math.max(20, medArea*0.15) && c.w <= medW*3 && c.h > c.w);
-  comps.sort((a,b)=>a.cx-b.cx);
-
-  if (comps.length !== 65)
-    return {error:"Found " + comps.length + " bars instead of 65.", count:comps.length};
-
-  const hs = comps.map(c=>c.h).sort((a,b)=>a-b);
-  const lo = hs[Math.floor(hs.length*0.20)], hi = hs[Math.floor(hs.length*0.80)];
-  const mids = comps.map(c=>c.h).filter(h=>h>lo && h<=hi);
-  const talls = comps.map(c=>c.h).filter(h=>h>hi);
-  const shorts= comps.map(c=>c.h).filter(h=>h<lo);
-  if (!mids.length || !talls.length || !shorts.length)
-    return {error:"The bars do not separate into the three heights an IMb needs. Try a squarer, better lit shot."};
-  const tFull  = (median(talls) + median(mids))/2;
-  const tTrack = (median(shorts) + median(mids))/2;
-
-  const coef = quadFit(comps.map(c=>c.cx), comps.map(c=>c.cy));
-  if (!coef) return {error:"Could not work out the barcode's baseline."};
-
-  let out = "";
-  for (const c of comps){
-    const base = coef[0] + coef[1]*c.cx + coef[2]*c.cx*c.cx;
-    if (c.h >= tFull) out += "F";
-    else if (c.h <= tTrack) out += "T";
-    else out += (c.cy < base) ? "A" : "D";
-  }
-  return {bars: out, comps: comps};
-}
-
-/* ---------- checks ---------- */
 function checkRouting(f, typed){
   const t = String(typed||"").replace(/\D/g,"");
   const routing = (f.zip||"") + (f.plus4||"");
   if (!t) return {state:"unknown", text:"No ZIP+4 entered, so routing was not checked."};
   if (!routing) return {state:"bad", text:"The barcode carries no routing code, so it cannot route to the reply address."};
   if (t.length >= 9){
-    const want = t.slice(0,9), got = routing.slice(0,9);
-    return got === want
-      ? {state:"ok",  text:"Routing " + f.zip + "-" + f.plus4 + " matches the printed address."}
-      : {state:"bad", text:"Barcode routes to " + got.slice(0,5) + "-" + got.slice(5) +
-                           ". The piece is printed " + want.slice(0,5) + "-" + want.slice(5) + "."};
+    const want=t.slice(0,9), got=routing.slice(0,9);
+    return got===want
+      ? {state:"ok",  text:"Routing "+f.zip+"-"+f.plus4+" matches the printed address."}
+      : {state:"bad", text:"Barcode routes to "+got.slice(0,5)+"-"+got.slice(5)+". The piece is printed "+want.slice(0,5)+"-"+want.slice(5)+"."};
   }
   return (f.zip === t.slice(0,5))
-    ? {state:"ok",  text:"ZIP " + f.zip + " matches. Enter the full ZIP+4 to check the add-on too."}
-    : {state:"bad", text:"Barcode routes to ZIP " + f.zip + ". The piece is printed " + t.slice(0,5) + "."};
+    ? {state:"ok",  text:"ZIP "+f.zip+" matches. Enter the full ZIP+4 to check the add-on too."}
+    : {state:"bad", text:"Barcode routes to ZIP "+f.zip+". The piece is printed "+t.slice(0,5)+"."};
 }
 
 let session = [];
 
-function render(f, bars){
-  const tbl = stidTable(), st = tbl[f.service_type];
-  const rc = checkRouting(f, $("zip").value);
-  const piece = $("piece").value;
-  const problems = [];
-  if (rc.state === "bad") problems.push(rc.text);
-  if (st && piece === "reply" && !st.reply)
-    problems.push('Service type ' + f.service_type + ' is "' + st.desc + '", which is not a reply-mail code.');
-  if (st && piece === "outbound" && st.reply)
-    problems.push('Service type ' + f.service_type + ' is "' + st.desc + '", which belongs on a reply envelope.');
+function render(f, bars, snapshot){
+  const tbl=stidTable(), st=tbl[f.service_type];
+  const rc=checkRouting(f, $("zip").value);
+  const piece=$("piece").value;
+  const problems=[];
+  if (rc.state==="bad") problems.push(rc.text);
+  if (st && piece==="reply" && !st.reply)
+    problems.push('Service type '+f.service_type+' is "'+st.desc+'", which is not a reply-mail code.');
+  if (st && piece==="outbound" && st.reply)
+    problems.push('Service type '+f.service_type+' is "'+st.desc+'", which belongs on a reply envelope.');
 
   const verdict = problems.length
-    ? '<div class="verdict no">Do not approve<small>' + problems.map(esc).join("<br>") + '</small></div>'
-    : rc.state === "unknown"
-      ? '<div class="verdict unk">Not verified<small>' + esc(rc.text) + '</small></div>'
-      : '<div class="verdict ok">Checks passed<small>' + esc(rc.text) + '</small></div>';
+    ? '<div class="verdict no">Do not approve<small>'+problems.map(esc).join("<br>")+'</small></div>'
+    : rc.state==="unknown"
+      ? '<div class="verdict unk">Not verified<small>'+esc(rc.text)+'</small></div>'
+      : '<div class="verdict ok">Checks passed<small>'+esc(rc.text)+'</small></div>';
 
   const stBadge = !st ? '<span class="badge unk">NOT IN THE TABLE</span>'
     : st.reply ? '<span class="badge ok">REPLY MAIL</span>' : '<span class="badge no">NOT REPLY MAIL</span>';
 
-  const rows = [
+  const rows=[
     ["Barcode identifier", f.barcode_id, ""],
-    ["Service type", f.service_type + (st ? " " + st.desc : ""), stBadge],
+    ["Service type", f.service_type+(st?" "+st.desc:""), stBadge],
     ["Mailer ID", f.mailer_id, '<span class="badge unk">'+(f.mailer_id||"").length+' DIGIT</span>'],
     ["Serial number", f.serial_num, ""],
-    ["Routing code", f.zip ? f.zip + (f.plus4 ? "-"+f.plus4 : "") + (f.delivery_pt ? " DP "+f.delivery_pt : "") : "none", ""]
-  ].map(r => '<tr><td class="k">'+esc(r[0])+'</td><td class="v">'+esc(r[1]||"—")+' '+r[2]+'</td></tr>').join("");
+    ["Routing code", f.zip ? f.zip+(f.plus4?"-"+f.plus4:"")+(f.delivery_pt?" DP "+f.delivery_pt:"") : "none", ""]
+  ].map(r=>'<tr><td class="k">'+esc(r[0])+'</td><td class="v">'+esc(r[1]||"—")+' '+r[2]+'</td></tr>').join("");
 
   $("result").innerHTML =
-    '<div class="card"><h2>Result</h2><div class="body">' + verdict +
-    '<table><tbody>' + rows + '</tbody></table>' +
-    '<p class="note" style="margin:14px 0 4px">The 65 bars read from the photo</p>' +
-    '<div class="raw">' + esc(bars) + '</div>' +
+    '<div class="card"><h2>Result</h2><div class="body">'+verdict+
+    '<table><tbody>'+rows+'</tbody></table>'+
+    '<p class="note" style="margin:14px 0 4px">The 65 bars read from the piece</p>'+
+    '<div class="raw">'+esc(bars)+'</div>'+
+    (snapshot ? '<p class="note" style="margin:14px 0 4px">What was read</p><img class="shot" src="'+snapshot+'">' : '')+
     '</div></div>';
+  $("result").scrollIntoView({behavior:"smooth", block:"start"});
 
   session.unshift({time:new Date().toLocaleTimeString(), zip:$("zip").value,
                    routing:(f.zip||"")+(f.plus4||""), stid:f.service_type,
@@ -377,68 +451,137 @@ function render(f, bars){
 }
 
 function renderLog(){
-  if (!session.length){ $("log").innerHTML = '<p class="note">Nothing checked yet.</p>'; return; }
-  const distinct = new Set(session.map(s=>s.routing)).size;
-  const head = (session.length>1 && distinct>1)
-    ? '<div class="warn">'+distinct+' different routing codes in this session. If these pieces are from one job, that needs explaining.</div>' : "";
-  $("log").innerHTML = head + '<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>' +
-    session.map(s => '<tr class="'+(!s.pass?"bad":s.checked?"good":"")+'">' +
-      '<td class="v">'+esc(s.time)+'</td><td class="v">'+esc(s.routing||"none")+'</td>' +
-      '<td class="v">'+esc(s.stid||"")+'</td><td><span class="badge '+(!s.pass?"no":s.checked?"ok":"unk")+'">' +
-      (!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED")+'</span></td></tr>').join("") + '</tbody></table>';
+  if (!session.length){ $("log").innerHTML='<p class="note">Nothing checked yet.</p>'; return; }
+  const distinct=new Set(session.map(s=>s.routing)).size;
+  const head=(session.length>1&&distinct>1)
+    ? '<div class="warn">'+distinct+' different routing codes in this session. If these pieces are from one job, that needs explaining.</div>':"";
+  $("log").innerHTML = head+'<table><thead><tr><th>Time</th><th>Routing</th><th>STID</th><th></th></tr></thead><tbody>'+
+    session.map(s=>'<tr class="'+(!s.pass?"bad":s.checked?"good":"")+'">'+
+      '<td class="v">'+esc(s.time)+'</td><td class="v">'+esc(s.routing||"none")+'</td>'+
+      '<td class="v">'+esc(s.stid||"")+'</td><td><span class="badge '+(!s.pass?"no":s.checked?"ok":"unk")+'">'+
+      (!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED")+'</span></td></tr>').join("")+'</tbody></table>';
 }
 
-$("clearBtn").addEventListener("click", () => { session=[]; renderLog(); $("result").innerHTML=""; });
-$("exportBtn").addEventListener("click", () => {
+$("clearBtn").addEventListener("click", ()=>{ session=[]; renderLog(); $("result").innerHTML=""; });
+$("exportBtn").addEventListener("click", ()=>{
   if (!session.length) return;
-  const csv = ["time,printed_zip,routing,service_type,result,bars"].concat(
-    session.map(s => [s.time,s.zip,s.routing,s.stid,(!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED"),s.bars]
-      .map(x => '"'+String(x==null?"":x).replace(/"/g,'""')+'"').join(","))).join("\n");
+  const csv=["time,printed_zip,routing,service_type,result,bars"].concat(
+    session.map(s=>[s.time,s.zip,s.routing,s.stid,(!s.pass?"FAIL":s.checked?"PASS":"NOT CHECKED"),s.bars]
+      .map(x=>'"'+String(x==null?"":x).replace(/"/g,'""')+'"').join(","))).join("\n");
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
   a.download="imb-check-"+new Date().toISOString().slice(0,10)+".csv";
   a.click(); URL.revokeObjectURL(a.href);
 });
 
-/* ---------- photo in ---------- */
-$("photo").addEventListener("change", async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  $("status").textContent = "Reading the photo…";
-  $("result").innerHTML = "";
-  try {
-    const bmp = await createImageBitmap(file);
-    // cap the long edge so a 12-megapixel phone shot does not crawl
-    const maxW = 2400;
-    const scale = Math.min(1, maxW / bmp.width);
-    const cv = document.createElement("canvas");
-    cv.width = Math.round(bmp.width*scale);
-    cv.height = Math.round(bmp.height*scale);
-    cv.getContext("2d", {willReadFrequently:true}).drawImage(bmp, 0, 0, cv.width, cv.height);
+/* ---------- live camera ---------- */
+let stream=null, scanning=false, track=null, tries=0;
 
-    const got = barsFromImage(cv);
-    if (got.error){
-      $("status").textContent = "";
-      $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' + esc(got.error) +
-        '<br><br>The barcode should fill the frame left to right, with the phone square to the envelope.</div></div></div>';
+async function startCamera(){
+  $("result").innerHTML="";
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1920} },
+      audio: false
+    });
+  } catch (e) {
+    $("status").innerHTML = '<span style="color:var(--fail)">Could not open the camera: '+esc(e.message||e)+
+      '. On iPhone the camera only works over https, and the page needs permission.</span>';
+    return;
+  }
+  const v=$("vid");
+  v.srcObject=stream;
+  await v.play().catch(()=>{});
+  track = stream.getVideoTracks()[0];
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (caps && caps.torch){
+    $("torch").hidden=false;
+    $("torch").onclick=()=>{
+      const on=!($("torch").dataset.on==="1");
+      track.applyConstraints({advanced:[{torch:on}]}).then(()=>{
+        $("torch").dataset.on = on?"1":"0";
+        $("torch").textContent = on?"Light off":"Light";
+      }).catch(()=>{});
+    };
+  } else $("torch").hidden=true;
+
+  $("cam").classList.add("on");
+  scanning=true; tries=0;
+  $("camMsg").textContent="Line the barcode up inside the box";
+  $("camSub").textContent="Fill the box left to right, phone square to the envelope";
+  setTimeout(tick, 400);
+}
+
+function stopCamera(){
+  scanning=false;
+  $("cam").classList.remove("on");
+  if (stream) stream.getTracks().forEach(t=>t.stop());
+  stream=null; track=null;
+}
+$("camClose").addEventListener("click", stopCamera);
+$("scanBtn").addEventListener("click", startCamera);
+
+const work = document.createElement("canvas");
+function tick(){
+  if (!scanning) return;
+  const v=$("vid");
+  if (!v.videoWidth){ setTimeout(tick,120); return; }
+  // keep resolution up: 65 fine bars need pixels, and a small frame simply fails
+  const maxEdge=1920;
+  const sc=Math.min(1, maxEdge/Math.max(v.videoWidth, v.videoHeight));
+  work.width=Math.round(v.videoWidth*sc);
+  work.height=Math.round(v.videoHeight*sc);
+  const ctx=work.getContext("2d",{willReadFrequently:true});
+  ctx.drawImage(v,0,0,work.width,work.height);
+
+  let found=null;
+  try {
+    const data=ctx.getImageData(0,0,work.width,work.height).data;
+    const got=findBarcodes(data, work.width, work.height);
+    if (got.bars.length) found=decodeAny(got.bars);
+  } catch(e){ /* keep going */ }
+
+  if (found){
+    const snap = work.toDataURL("image/jpeg", 0.7);
+    stopCamera();
+    if (navigator.vibrate) navigator.vibrate(60);
+    render(found.fields, found.bars, snap);
+    return;
+  }
+  tries++;
+  if (tries === 12) $("camSub").textContent="Still looking. Move a little closer so the bars fill the box.";
+  if (tries === 30) $("camSub").textContent="Try more light, or tap Cancel and use a photo instead.";
+  setTimeout(tick, 60);
+}
+
+/* ---------- photo fallback ---------- */
+$("photoBtn").addEventListener("click", ()=>$("photo").click());
+$("photo").addEventListener("change", async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  $("status").textContent="Reading the photo…"; $("result").innerHTML="";
+  try {
+    const bmp=await createImageBitmap(file);
+    const sc=Math.min(1, 3000/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement("canvas");
+    cv.width=Math.round(bmp.width*sc); cv.height=Math.round(bmp.height*sc);
+    const ctx=cv.getContext("2d",{willReadFrequently:true});
+    ctx.drawImage(bmp,0,0,cv.width,cv.height);
+    const got=findBarcodes(ctx.getImageData(0,0,cv.width,cv.height).data, cv.width, cv.height);
+    const hit=got.bars.length ? decodeAny(got.bars) : null;
+    $("status").textContent="";
+    if (!hit){
+      $("result").innerHTML='<div class="card"><div class="body"><div class="warn">'+
+        'No barcode read from that photo. It searched '+got.regions+' likely areas.'+
+        '<br><br>Get closer so the barcode fills the frame, hold the phone square to the envelope, and avoid shadow across the bars.'+
+        '</div></div></div>';
       return;
     }
-    window.IMB.decode(got.bars, (err, fields) => {
-      $("status").textContent = "";
-      if (err){
-        $("result").innerHTML = '<div class="card"><div class="body"><div class="warn">' +
-          'Read 65 bars but they did not decode to a valid barcode, so some were misread.' +
-          '<br><br><span style="font-family:var(--mono);font-size:11px">' + esc(got.bars) + '</span>' +
-          '</div></div></div>';
-        return;
-      }
-      render(fields, got.bars);
-    });
-  } catch (err) {
-    $("status").textContent = "";
-    alert("Could not read that photo: " + (err.message || err));
+    render(hit.fields, hit.bars, cv.toDataURL("image/jpeg",0.7));
+  } catch(err){
+    $("status").textContent="";
+    alert("Could not read that photo: "+(err.message||err));
   }
-  e.target.value = "";
+  e.target.value="";
 });
 
 renderLog();
